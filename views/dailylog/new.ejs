@@ -1,0 +1,110 @@
+<% layout('layouts/boilerplate')%>
+    <div>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>New Entry</title>
+            <!-- Font Awesome CSS -->
+            <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+                rel="stylesheet">
+            <link rel="stylesheet" href="/stylesheets/new.css">
+
+            <div class="container">
+                <h1 class="text-center mb-4">How Are You Feeling?</h1>
+
+                <div class="form-group emotion-slider">
+                    <label for="enjoymentSlider"><i class="fas fa-smile"></i> Enjoyment:</label>
+                    <input type="range" min="0" max="10" value="5" class="form-control-range" id="enjoymentSlider">
+                    <span id="enjoymentValue">5</span>
+                </div>
+
+                <div class="form-group emotion-slider">
+                    <label for="angerSlider"><i class="fas fa-angry"></i> Anger:</label>
+                    <input type="range" min="0" max="10" value="5" class="form-control-range" id="angerSlider">
+                    <span id="angerValue">5</span>
+                </div>
+
+                <div class="form-group emotion-slider">
+                    <label for="contemptSlider"><i class="fas fa-frown"></i> Contempt:</label>
+                    <input type="range" min="0" max="10" value="5" class="form-control-range" id="contemptSlider">
+                    <span id="contemptValue">5</span>
+                </div>
+
+                <div class="form-group emotion-slider">
+                    <label for="disgustSlider"><i class="fas fa-dizzy"></i> Disgust:</label>
+                    <input type="range" min="0" max="10" value="5" class="form-control-range" id="disgustSlider">
+                    <span id="disgustValue">5</span>
+                </div>
+
+                <div class="form-group emotion-slider">
+                    <label for="sadnessSlider"><i class="fas fa-sad-tear"></i> Sadness:</label>
+                    <input type="range" min="0" max="10" value="5" class="form-control-range" id="sadnessSlider">
+                    <span id="sadnessValue">5</span>
+                </div>
+
+                <div class="form-group emotion-slider">
+                    <label for="surpriseSlider"><i class="fas fa-surprise"></i> Surprise:</label>
+                    <input type="range" min="0" max="10" value="5" class="form-control-range" id="surpriseSlider">
+                    <span id="surpriseValue">5</span>
+                </div>
+                <div class="container mt-5">
+                    <h2>What triggered these emotions?</h2>
+                    <form>
+                        <div class="form-group">
+                            <label for="categorySelect">Select Category:</label>
+                            <div class="dropdown">
+                                <button class="btn btn-secondary dropdown-toggle wide-btn" type="button"
+                                    id="categorySelect" data-toggle="dropdown" aria-haspopup="true"
+                                    aria-expanded="false">
+                                    Select Category
+                                </button>
+                                <div class="dropdown-menu" aria-labelledby="categorySelect">
+                                    <a class="dropdown-item" href="#">
+                                        <input type="checkbox" id="family" value="Family"> Family
+                                    </a>
+                                    <a class="dropdown-item" href="#">
+                                        <input type="checkbox" id="work" value="Work"> Work
+                                    </a>
+                                    <a class="dropdown-item" href="#">
+                                        <input type="checkbox" id="study" value="Study"> Study
+                                    </a>
+                                    <a class="dropdown-item" href="#">
+                                        <input type="checkbox" id="sleep" value="Sleep"> Sleep
+                                    </a>
+                                    <a class="dropdown-item" href="#">
+                                        <input type="checkbox" id="friends" value="Friends"> Friends
+                                    </a>
+                                    <a class="dropdown-item" href="#">
+                                        <input type="checkbox" id="diet" value="Diet"> Diet
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="notes">Additional Notes:</label>
+                            <input type="text" class="form-control" id="notes" name="notes">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+
+                <!-- Bootstrap JS and jQuery (required for sliders) -->
+                <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+                <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+                <!-- Font Awesome JS -->
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+
+                <script>
+                    // Update the value displayed beside each slider
+                    document.querySelectorAll('.form-control-range').forEach(function (slider) {
+                        const valueSpan = document.getElementById(slider.id + 'Value');
+                        valueSpan.textContent = slider.value;
+
+                        slider.addEventListener('input', function () {
+                            valueSpan.textContent = this.value;
+                        });
+                    });
+                </script>
+            </div>
+        <a href="/dailylog">All Logs</a>
+    </div>
