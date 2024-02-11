@@ -1,1 +1,75 @@
 <% layout('layouts/boilerplate')%>
+ <div class="uk-section uk-background-muted">
+                <div class="uk-container">
+
+                    <% if (loggedin) { %>
+                        <h2 class="uk-heading-small uk-text-left">
+                            <%= `${user.name}'s Log `%>
+                        </h2>
+                        <% } else { %>
+                            <h2 class="uk-heading-small uk-text-left">My Log</h2>
+                            <% } %>
+
+                                <div class="card mb-3">
+                                    <% const dateformat={ weekday: 'long' , year: 'numeric' , month: 'long' ,
+                                        day: 'numeric' , hour: 'numeric' , minute: 'numeric' , hour24: true }; %>
+                                        <% log.forEach((row)=> { %>
+                                            <% var snapshotid=row.snapshot_id; %>
+                                                <% if (loggedin) { %>
+                                                    <div class="card mb-3">
+                                                        <div class="card mb-3">
+                                                            <div class="card-body">
+                                                                    <% var rawdate=new Date(row.time_stamp); %>
+                                                                        <% var itemdate=new Intl.DateTimeFormat('en-GB',
+                                                                            dateformat).format(rawdate); %>
+
+                                                                            <h3 class="card-title">
+                                                                                <%= itemdate %>
+                                                                             </h3>
+                                                                             <div class="col-md-12  text-right">
+                                                                                <a class="btn btn-secondary" href="/edit<%=snapshotid%>">View Record</a>
+                                                                             </div>
+                                                                            <h5>Emotion Summary</h5>
+                                                                            <ul class="list-group list-group-flush">
+                                                                                
+                                                                                <li class="list-group-item text-muted">Enjoyment :<%= row.enjoyment%></li>
+                                                                                <li class="list-group-item text-muted">Sadness   :<%= row.sadness%></li>
+                                                                                <li class="list-group-item text-muted">Anger     :<%= row.anger %></li>
+                                                                                <li class="list-group-item text-muted">Contempt  :<%= row.contempt %></li>
+                                                                                <li class="list-group-item text-muted">Fear      :<%= row.fear %></li>
+                                                                                <li class="list-group-item text-muted">Surprise  :<%= row.surprise %></li>
+                                                                            
+                                                                            </ul>
+                                                                            <%= row.items %>
+                                                                            <div class="col-md-12  text-right">
+                                                                            <a class="card-link btn btn-info" href="/edit<%=snapshotid%>">Edit</a>
+                                                                            
+                                                                    <form class="d-inline" action="/dailylog/<%snapshotid%>?_method=DELETE" method="POST">
+                                                                        <button class="btn btn-danger">Delete</button>
+                                                                    </div>
+                                                                    </br>
+                                                            </div>
+                                                            <% } else { %>
+                                                                <div>
+                                                                    
+                                                                     <div class='uk-display-block uk-card uk-card-body uk-card-default'>
+                                                                        <% var rawdate=new Date(row.time_stamp); %>
+                                                                            <% var itemdate=new
+                                                                                Intl.DateTimeFormat('en-GB',
+                                                                                dateformat).format(rawdate); %>
+
+                                                                                <h3 class='uk-card-title'> <%= itemdate %></h3>
+                                                                                <%= row.items %>
+                                                                    </div>
+                                                                </div>
+                                                                <% } %>
+                                                                    <% }); %>
+                                                        </div>
+                                                 </div>
+                                                    </div>
+                                </div>
+                </div>
+        
+
+</div>
+   

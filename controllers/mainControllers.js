@@ -1,6 +1,6 @@
 const conn = require('./../utils/dbconn');
 
-/*exports.getUser = (req, res) => {
+/*exports.getLogs = (req, res) => {
 
     var userinfo = {};
     const { isloggedin, userid } = req.session;
@@ -8,38 +8,70 @@ const conn = require('./../utils/dbconn');
 
     if (isloggedin) {
 
-        const getuserSQL = ``;
+        const getuserSQL = `SELECT user.user_name, snapshot.time_stamp,snapshot.enjoyment,
+                            snapshot.sadness,snapshot.anger,snapshot.contempt,snapshot.disgust,
+                            snapshot.fear,snapshot.surprise,notes 
+                            FROM user LEFT JOIN snapshot ON
+                            user.user_id = snapshot.user_id
+                            WHERE user.user_id = '${userid}'`;
 
         conn.query(getuserSQL, (err, rows) => {
             if (err) throw err;
 
             console.log(rows);
             const username = rows[0].name;
-            const userrole = rows[0].role;
+            
 
             const session = req.session;
             session.name = username;
-            session.role = userrole;
             console.log(session);
-
-            userinfo = { name: username, role: userrole };
+            userinfo = { name: username};
             console.log(userinfo);
         });
-    
+    }
+*/
 
-    const selectSQL = 'SELECT * FROM snapshot';
-    conn.query(selectSQL, (err, rows) => {   
+exports.getLogs = (req, res) => {
+
+    var userinfo = {};
+    const { isloggedin, userid } = req.session;
+    console.log(`User data from session: ${isloggedin}, ${userid}`);
+
+    if (isloggedin) {
+
+        const getuserSQL = `SELECT user.user_name FROM user
+                            WHERE user.user_id = '${userid}'`;
+
+        conn.query(getuserSQL, (err, rows) => {
+            if (err) throw err;
+
+            console.log(rows);
+            const username = rows[0].user_name;
+
+
+            const session = req.session;
+            session.name = username;
+            console.log(session);
+
+            userinfo = { name: username };
+            console.log(userinfo);
+        });
+    }
+
+    const selectSQL = `SELECT * FROM snapshot WHERE snapshot.user_id = '${userid}'`;
+    conn.query(selectSQL, (err, rows) => {
         if (err) {
             throw err;
         } else {
-            res.render('index', { schedule: rows, loggedin: isloggedin, user: userinfo });
+            console.log(rows)
+            res.render('./dailylog/show', { log: rows, loggedin: isloggedin, user: userinfo });
         }
     });
 };
-*/
 
-exports.getAddNewLog= (req, res) => {
-    
+
+exports.getAddNewLog = (req, res) => {
+
 
     const { isloggedin } = req.session;
     console.log(`User logged in: ${isloggedin}`);
@@ -60,9 +92,9 @@ exports.selectLog = (req, res) => {
     if (isloggedin) {
 
         const { id } = req.params;
-        
+
         const selectSQL = `SELECT * FROM snapshot WHERE id = ${id}`;
-        conn.query(selectSQL, (err, rows) => {   
+        conn.query(selectSQL, (err, rows) => {
             if (err) {
                 throw err;
             } else {
@@ -75,26 +107,31 @@ exports.selectLog = (req, res) => {
     }
 };
 
-/*exports.postNewRun = (req, res) => {
-    const { new_details, new_date } = req.body;
-    const vals = [ new_details, new_date ];
+exports.postNewLog = (req, res) => {
+    const { isloggedin } = req.session;
+    console.log(`User logged in: ${isloggedin}`);
+    console.log(req.body);
+    res.redirect('/dailylog/show');
+    
+    /*const { ,  } = req.body;
+    const vals = [  ];
 
-    const insertSQL = 'INSERT INTO snapshot (items, mydate) VALUES (?, ?)';
+    const insertSQL = 'INSERT INTO snapshot (snapshot_id,user_id,enjoyment,sadness,anger,contempt,disgust,fear,surprise,time_stamp,notes) VALUES ( ?)';
 
     conn.query(insertSQL, vals, (err, rows) => {
         if (err) {
             throw err;
         } else {
-            res.redirect('/');
+            res.redirect('/dailylog/show');
         }
-    });
-};
+    });*/
+}
 
 exports.updateLogTriggers = (req, res) => {
-    
+
     const run_id = req.params.id;
     const { run_details, run_date } = req.body;
-    const vals = [ run_details, run_date, run_id ];
+    const vals = [run_details, run_date, run_id];
 
     const updateSQL = 'UPDATE runschedule SET items = ?, mydate = ? WHERE id = ?';
     conn.query(updateSQL, vals, (err, rows) => {
@@ -106,18 +143,26 @@ exports.updateLogTriggers = (req, res) => {
     });
 };
 
-
+/*
 exports.deleteLog = (req, res) => {
     
     const run_id = req.params.id;
 
-    const deleteSQL = `DELETE FROM runschedule WHERE id = ${run_id}`;
-    conn.query(deleteSQL, (err, rows) => {
-        if (err) {
-            throw err;
-        } else {
-            res.redirect('/');
-        }
+    const deleteSQL1 = `DELETE FROM snapshot WHERE snapshot_id = ${snapshot_id}`;
+    conn.query(deleteSQL1, (err, rows) => {
+        if (err) {  
+            
+        const deleteSQL2 = `DELETE FROM snapshot_context_trigger WHERE snapshot_id = ${snapshot_id}`;
+        conn.query(deleteSQL2, (err, rows) => {
+            if (err) {
+                throw err;
+            } else {
+                res.redirect('/');
+            }
+        
+       
+
+    
     });
 };
 */
@@ -127,7 +172,11 @@ exports.getLogin = (req, res) => {
 };
 
 exports.getHome = (req, res) => {
-    res.render('home');
+
+    var userinfo = {};
+    const { isloggedin, userid } = req.session;
+    console.log(`User data from session: ${isloggedin}, ${userid}`)
+    res.render('home', { loggedin: isloggedin, user: userinfo });
 };
 
 exports.getRegister = (req, res) => {
@@ -135,15 +184,15 @@ exports.getRegister = (req, res) => {
 };
 
 exports.postLogin = (req, res) => {
-
+    const { isloggedin } = req.session
     const { username, password } = req.body;
-    const vals = [ username, password ];
+    const vals = [username, password];
     console.log(vals);
 
-    const checkuserSQL = `SELECT user_id FROM user WHERE user.user_name = '${ username }' 
-                            AND user.password = '${ password }'`;
+    const checkuserSQL = `SELECT user_id FROM user WHERE user.user_name = '${username}' 
+                            AND user.password = '${password}'`;
 
-    conn.query( checkuserSQL, vals, (err, rows) => {
+    conn.query(checkuserSQL, vals, (err, rows) => {
         if (err) throw err;
 
         const numrows = rows.length;
@@ -153,7 +202,8 @@ exports.postLogin = (req, res) => {
             console.log(rows);
             const session = req.session;
             session.isloggedin = true;
-            session.userid = rows[0].id;
+            console.log(rows[0]);
+            session.userid = rows[0].user_id;
             console.log(session);
             console.log(session.isloggedin);
 
@@ -164,10 +214,28 @@ exports.postLogin = (req, res) => {
     });
 };
 
+exports.postRegister = (req, res) => {
+    try {
+        const { username, email, password, firstname, lastname } = req.body;
+        const vals = [username, email, password, firstname, lastname];
+        console.log(vals);
+        const insertUserSQL = 'INSERT INTO `user` (`user_id`, `user_name`, `email`, `password`, `first_name`, `last_name`) VALUES  (NULL, ?, ?, ?, ?,?)';
+        conn.query(insertUserSQL, vals, (err, rows) => {
+            if (err) {
+                throw err;
+            }
+            else {
+                res.redirect('/');
+            }
+        });
+     } catch (e) {
+        /*req.flash('error', e.message);
+        res.redirect('register');*/
+    }
+};
 
 exports.getLogout = (req, res) => {
     req.session.destroy(() => {
         res.redirect('/');
     });
 };
- 
