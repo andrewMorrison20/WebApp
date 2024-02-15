@@ -1,0 +1,79 @@
+<% layout('layouts/boilerplate')%>
+    <link rel="stylesheet" href="/stylesheets/new.css">
+    <div class="container mt-5 container2">
+        <h1 class="text-center mb-4">How Are You Feeling?</h1>
+        <form action="/dailylog/new" method="post">
+            <fieldset class="slider">
+                <legend>
+                    Emotion Levels:
+                </legend>
+
+
+                <label>
+                    Sadness
+                    <input type="range" name="enjoyment" type="range" min="0" max="10" id="sadnessSlider" />
+                </label>
+                </br>
+                <label>
+                    Enjoyment
+                    <input type="range" name="sadness" type="range" min="0" max="10" id="enjoymentSlider" />
+                </label>
+                </br>
+
+                <label>
+                    Anger
+                    <input type="range" name="anger" type="range" min="0" max="10" id="angerSlider" />
+                </label>
+                </br>
+                <label>
+                    Contempt
+                    <input type="range" name="contempt" type="range" min="0" max="10" id="contemptSlider" />
+                </label>
+                </br>
+                <label>
+                    Disgust
+                    <input type="range" name="disgust" type="range" min="0" max="10" id="disgustSlider" />
+                </label>
+                </br>
+                <label>
+                    Surprise
+                    <input type="range" name="surprise" type="range" min="0" max="10" id="surpriseSlider" />
+                </label>
+                </br>
+                <label>
+                    Fear
+                    <input type="range" name="fear" type="range" min="0" max="10" id="fearSlider" />
+                </label>
+                </br>
+
+            </fieldset>
+
+            <fieldset>
+                </br>
+                <legend>
+                    What triggered these emotions? :
+                </legend>
+                </br>
+
+                <% triggers.forEach(function(trigger) { %>
+                    <input type="checkbox" class="btn-check" id="<%= trigger.trigger_id %>" name="triggers"
+                        value="<%= trigger.trigger_id %>">
+                    <label for="<%= trigger.trigger_id %>" class="btn btn-secondary">
+                        <%= trigger.trigger_name %>
+                    </label>
+                    <% }); %>
+
+
+            </fieldset>
+            </br>
+            <fieldset>
+                <legend>Additional Notes: </legend>
+                <input type="textarea" class="form-control" id="notes" name="notes">
+            </fieldset>
+
+
+            </br>
+            <button type="submit" class="btn btn-primary">Submit</button>
+
+        </form>
+    </div>

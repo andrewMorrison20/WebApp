@@ -10,15 +10,10 @@ router.get('/register', controller.getRegister);
 router.post('/login', controller.postLogin);
 router.post('/register', controller.postRegister);
 router.get('/logout', controller.getLogout);
-router.post('/dailylog/new', controller.postNewLog)
+router.post('/dailylog/new', controller.postNewLog);
+router.post('/del/:id', controller.deleteLog);
+router.get('/edit/:id', controller.getEditLog);
+router.post('/edit/:id', controller.updateLogTriggers);
+router.get('/view/:id',controller.selectLog);
 
-/*router.get('/edit/:id', controller.selectLog);
-
-;
-
-;
-router.post('/edit/:id', controller.updateRun);
-router.post('/del/:id', controller.deleteRun);
-;
-*/
 module.exports = router;

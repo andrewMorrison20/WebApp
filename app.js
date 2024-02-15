@@ -1,16 +1,17 @@
 //if (process.env.NODE_ENV !== "production") {
-  //  require('dotenv').config();
+//  require('dotenv').config();
 //}
 
 const express = require('express');
 const morgan = require('morgan');
-const dotenv = require('dotenv').config({ path : './config.env'});
+const dotenv = require('dotenv').config({ path: './config.env' });
 const session = require('express-session');
 const router = require('./routes/mainRoutes');
 const path = require('path');
-const mysql2= require('mysql2');
+const mysql2 = require('mysql2');
 const ejsMate = require('ejs-mate');
 const flash = require('connect-flash');
+const moment = require('moment');
 
 const app = express();
 
@@ -34,14 +35,14 @@ app.use(session({
     secret: 'thisshouldbeabettersecret!',
     resave: false,
     saveUninitialized: false,
-  /*  cookie: {
-        httpOnly: true,
-        expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
-        maxAge: 1000 * 60 * 60 * 24 * 7
-    }*/
+    /*  cookie: {
+          httpOnly: true,
+          expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
+          maxAge: 1000 * 60 * 60 * 24 * 7
+      }*/
 }));
-app.use('/',router);
-app.set('view engine','ejs');
+app.use('/', router);
+app.set('view engine', 'ejs');
 app.engine('ejs', ejsMate);
 
 app.set('views', path.join(__dirname, 'views'));
@@ -78,7 +79,7 @@ app.use((err, req, res, next) => {
 });
 
 
-app.listen(process.env.PORT, (err) =>{
+app.listen(process.env.PORT, (err) => {
     if (err) return console.log(err);
 
     console.log(`Express listening port ${process.env.PORT}`)

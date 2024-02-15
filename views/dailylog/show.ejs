@@ -27,7 +27,7 @@
                                                                                 <%= itemdate %>
                                                                              </h3>
                                                                              <div class="col-md-12  text-right">
-                                                                                <a class="btn btn-secondary" href="/edit<%=snapshotid%>">View Record</a>
+                                                                                <a class="btn btn-secondary" href="/view/<%=snapshotid%>">View Record</a>
                                                                              </div>
                                                                             <h5>Emotion Summary</h5>
                                                                             <ul class="list-group list-group-flush">
@@ -38,15 +38,16 @@
                                                                                 <li class="list-group-item text-muted">Contempt  :<%= row.contempt %></li>
                                                                                 <li class="list-group-item text-muted">Fear      :<%= row.fear %></li>
                                                                                 <li class="list-group-item text-muted">Surprise  :<%= row.surprise %></li>
-                                                                            
+                                                                             
                                                                             </ul>
-                                                                            <%= row.items %>
+                                                                           
                                                                             <div class="col-md-12  text-right">
-                                                                            <a class="card-link btn btn-info" href="/edit<%=snapshotid%>">Edit</a>
+                                                                            <a class="card-link btn btn-info" href="/edit/<%=snapshotid%>">Edit</a>
                                                                             
-                                                                    <form class="d-inline" action="/dailylog/<%snapshotid%>?_method=DELETE" method="POST">
-                                                                        <button class="btn btn-danger">Delete</button>
-                                                                    </div>
+                                                                            <form method="post" class="d-inline">
+                                                                            <button class="d-inline btn btn-danger" formaction="/del/<%=snapshotid%>">Delete</button>
+                                                                            </form>
+                                                                            </div>
                                                                     </br>
                                                             </div>
                                                             <% } else { %>

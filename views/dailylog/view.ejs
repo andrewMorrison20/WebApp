@@ -1,0 +1,68 @@
+<% layout('layouts/boilerplate') %>
+    <link rel="stylesheet" href="/stylesheets/new.css">
+    <div class="container mt-5 container2">
+        <h1 class="text-center mb-4"></h1>
+
+        <% emotions.forEach((row)=> { %>
+            <% const dateformat={ weekday: 'long' , year: 'numeric' , month: 'long' , day: 'numeric' , hour: 'numeric' ,
+                minute: 'numeric' , hour24: true }; %>
+                <% if (loggedin) { %>
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <% var rawdate=new Date(row.time_stamp); %>
+                                <% var itemdate=new Intl.DateTimeFormat('en-GB', dateformat).format(rawdate); %>
+                                    <h3 class="card-title">
+                                        <%= itemdate %>
+                                    </h3>
+                                    <br>
+                                    <h5>Emotion Summary</h5>
+                                    <ul class="list-group list-group-flush">
+                                        <% Object.entries(row).forEach(([key, value])=> { %>
+                                            <% if (key !=='time_stamp' && key !=='notes' && key!=='user_id' && key!== 'snapshot_id') { %>
+                                                <li class="list-group-item text-muted">
+                                                    <%= key.charAt(0).toUpperCase() + key.slice(1) %>: <%= value %>
+                                                </li>
+                                                <% } %>
+                                                    <% }); %>
+                                    </ul>
+                                    <br>
+                                    <div>
+                                        <% if (triggers.length> 0) { %>
+                                            <h4>Current Triggers</h4>
+                                            <ul class="list-group list-group-flush">
+                                                <% triggers.forEach(function(trigger) { %>
+                                                    <li class="list-group-item text-muted">
+                                                        <%= trigger.trigger_name %>
+                                                    </li>
+                                                    <% }); %>
+                                            </ul>
+                                            <br>
+                                            <% } %>
+                                    </div>
+                                    <h4>Additional notes:</h4>
+                                    <p class="text-muted">
+                                        <%= row.notes %>
+                                    </p>
+                                    <div class="col-md-12 text-right">
+                                        <a class="card-link btn btn-secondary" href="/dailylog/showall">Back</a>
+                                        <a class="card-link btn btn-info" href="/edit/<%= snapshotid %>">Edit</a>
+                                        <form method="post" class="d-inline">
+                                            <button class="d-inline btn btn-danger"
+                                                formaction="/del/<%= snapshotid %>">Delete</button>
+                                        </form>
+                                    </div>
+                                    <br>
+                        </div>
+                    </div>
+                    <% } else { %>
+                        <div class="uk-display-block uk-card uk-card-body uk-card-default">
+                            <% var rawdate=new Date(row.time_stamp); %>
+                                <% var itemdate=new Intl.DateTimeFormat('en-GB', dateformat).format(rawdate); %>
+                                    <h3 class="uk-card-title">
+                                        <%= itemdate %>
+                                    </h3>
+                                    <%= row.items %>
+                        </div>
+                        <% } %>
+                            <% }); %>
+    </div>
