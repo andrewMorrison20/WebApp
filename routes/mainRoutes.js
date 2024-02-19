@@ -15,5 +15,5 @@ router.post('/del/:id', controller.deleteLog);
 router.get('/edit/:id', controller.getEditLog);
 router.post('/edit/:id', controller.updateLogTriggers);
 router.get('/view/:id',controller.selectLog);
-
+router.get('/dailylog/chart',controller.showchart);
 module.exports = router;

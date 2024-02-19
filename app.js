@@ -20,16 +20,6 @@ app.use(express.static(path.join(__dirname, '/public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(flash());
 
-/*const sessionConfig = {
-    secret: 'thisshouldbeabettersecret!',
-    resave: false,
-    saveUninitialized: false,
-  /*  cookie: {
-        httpOnly: true,
-        expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
-        maxAge: 1000 * 60 * 60 * 24 * 7
-    }*/
-
 
 app.use(session({
     secret: 'thisshouldbeabettersecret!',
@@ -48,26 +38,6 @@ app.engine('ejs', ejsMate);
 app.set('views', path.join(__dirname, 'views'));
 
 
-/*app.get('/',(req,res) => {
-    res.render('home')
-});
-
-app.get('/dailylog/new',(req,res) => {
-    res.render('./dailylog/new')
-});
-
-app.get('/dailylog/showall',(req,res)=>{
-    res.render('./dailylog/show')
-})
-
-app.get('/login',(req,res)=>{
-    res.render('./users/login')
-})
-
-app.get('/register',(req,res)=>{
-    res.render('./users/register')
-})*/
-
 app.all('*', (req, res, next) => {
     next(new ExpressError('Page Not Found', 404))
 });
@@ -77,6 +47,7 @@ app.use((err, req, res, next) => {
     if (!err.message) err.message = 'Oh No, Something Went Wrong!'
     res.status(statusCode).render('error', { err })
 });
+
 
 
 app.listen(process.env.PORT, (err) => {
