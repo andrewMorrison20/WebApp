@@ -8,11 +8,13 @@ const dotenv = require('dotenv').config({ path: './config.env' });
 const session = require('express-session');
 const flash = require('connect-flash');
 const ExpressError = require('./utils/ExpressError');
-const router = require('./routes/mainRoutes');
+const userRouter = require('./routes/userRoutes');
+const dailylogRouter = require('./routes/dailylogRoutes');
 const path = require('path');
 const mysql2 = require('mysql2');
 const ejsMate = require('ejs-mate');
 const moment = require('moment');
+const helmet = require('helmet');
 
 const app = express();
 
@@ -35,7 +37,7 @@ app.use(session({
 
 
 app.use(flash());
-
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use((req, res, next) => {
     console.log(req.session)
     res.locals.currentUser = req.user;
@@ -43,7 +45,8 @@ app.use((req, res, next) => {
     res.locals.error = req.flash('error');
     next();
 });
-app.use('/', router);
+app.use('/', userRouter);
+app.use('/dailylog', dailylogRouter);
 app.set('view engine', 'ejs');
 app.engine('ejs', ejsMate);
 

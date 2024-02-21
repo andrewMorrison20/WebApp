@@ -1,117 +1,7 @@
 const conn = require('./../utils/dbconn');
 const moment = require('moment');
 
-exports.showchart = (req, res) => {
-    const { isloggedin } = req.session;
-    console.log(isloggedin)
-    res.render('./dailylog/chart', { loggedin: isloggedin });
-}
-/*exports.getLogs = (req, res) => {
 
-    var userinfo = {};
-    const { isloggedin, userid } = req.session;
-    console.log(`User data from session: ${isloggedin}, ${userid}`);
-
-    if (isloggedin) {
-
-        const getuserSQL = `SELECT user.user_name, snapshot.time_stamp,snapshot.enjoyment,
-                            snapshot.sadness,snapshot.anger,snapshot.contempt,snapshot.disgust,
-                            snapshot.fear,snapshot.surprise,notes 
-                            FROM user LEFT JOIN snapshot ON
-                            user.user_id = snapshot.user_id
-                            WHERE user.user_id = '${userid}'`;
-
-        conn.query(getuserSQL, (err, rows) => {
-            if (err) throw err;
-
-            console.log(rows);
-            const username = rows[0].name;
-            
-
-            const session = req.session;
-            session.name = username;
-            console.log(session);
-            userinfo = { name: username};
-            console.log(userinfo);
-        });
-    }
-*/
-
-/*exports.getLogs = (req, res) => {
-
-    var userinfo = {};
-    const { isloggedin, userid } = req.session;
-    console.log(`User data from session: ${isloggedin}, ${userid}`);
-
-    if (isloggedin) {
-
-        const getuserSQL = `SELECT user.user_name,user.first_name FROM user
-                            WHERE user.user_id = '${userid}'`;
-
-        conn.query(getuserSQL, (err, rows) => {
-            if (err) throw err;
-
-            console.log(rows);
-            const username = rows[0].user_name;
-            const firstname= rows.first_name;
-
-
-            const session = req.session;
-            session.name = username;
-
-            session.firstName= firstname;
-            console.log(session);
-
-            userinfo = { name: username, firstname:firstname};
-            console.log(userinfo);
-        });
-    }
-
-    const selectSQL = `SELECT * FROM snapshot WHERE snapshot.user_id = '${userid}' ORDER BY time_stamp DESC`;
-    conn.query(selectSQL, (err, rows) => {
-        if (err) {
-            throw err;
-        } else {
-            const top7Snaps = rows.slice(-5);
-            console.log(top7Snaps);
-            const emotionDataSets = [];
-
-            top7Snaps.forEach(snap=> {
-                const emotionArray = Object.keys(snap)
-                    .filter(key => !['user_id', 'snapshot_id', 'notes', 'time_stamp'].includes(key))
-                    .map(key => snap[key])
-                emotionDataSets.push(emotionArray);
-            });
-
-            console.log(emotionDataSets);
-
-            const dateLabels= rows.map(row => {
-                const date = new Date(row.time_stamp);
-                return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
-            });
-            const selectCountSQL = `SELECT COUNT(*), trigger_name  FROM snapshot 
-            INNER JOIN snapshot_context_trigger ON snapshot.snapshot_id = snapshot_context_trigger.snapshot_id 
-            INNER JOIN context_trigger ON snapshot_context_trigger.trigger_id = context_trigger.trigger_id 
-            WHERE user_id = ${userid}
-            GROUP BY context_trigger.trigger_id;`
-            conn.query(selectCountSQL, (err, rows1) => {
-                if (err) throw err;
-                else {
-                    console.log(rows1);
-                    var counts = rows1.map(item => item['COUNT(*)']);
-                    var triggerNames = rows1.map(item => item.trigger_name);
-
-                    console.log("Counts:", counts);
-                    console.log("Trigger Names:", triggerNames);
-                    res.render('./dailylog/show', { log: rows, counts: counts, topDataSets: emotionDataSets, triggerNames: triggerNames, loggedin: isloggedin, user: userinfo });
-                }
-            });
-            console.log(rows)
-        }
-    });
-};
-
-*/
 exports.getLogs = (req, res) => {
     const { isloggedin, userid } = req.session;
 
@@ -151,16 +41,16 @@ exports.getLogs = (req, res) => {
             //filter keys to only include the emotions
             const emotions = Object.keys(rows[0]).filter(key => key !== 'snapshot_id' && key !== 'user_id' && key !== 'time_stamp' && key !== 'notes');
             //create an array for each set of values for each emotion
-            const emotionArrays = emotions.map(emotion => rows.map(row => row[emotion]));
+           
             console.log(emotions);
-            console.log(emotionArrays);
+        
 
             // Select the top 5 snapshots
-            const top7Snaps = rows.slice(0,5);
+            const top5Snaps = rows.slice(0,5);
             const emotionDataSets = [];
 
             // Extract emotion values from top 5 snapshots
-            top7Snaps.forEach(snap => {
+            top5Snaps.forEach(snap => {
                 const emotionArray = Object.keys(snap)
                     .filter(key => !['user_id', 'snapshot_id', 'notes', 'time_stamp'].includes(key))
                     .map(key => snap[key]);
@@ -168,12 +58,13 @@ exports.getLogs = (req, res) => {
             });
 
             // Extract date labels
-            const revrows=rows.reverse();
+            const revrows=[...rows];
+            revrows.reverse();
             const dateLabels = revrows.map(row => {
                 const date = new Date(row.time_stamp);
                 return `${date.getDate()}/${date.getMonth()+ 1}/${date.getFullYear()}`;
             });
-
+            const emotionArrays = emotions.map(emotion => revrows.map(row => row[emotion]));
             console.log(dateLabels);
 
             // Query to retrieve count of triggers
@@ -340,9 +231,9 @@ exports.postNewLog = (req, res) => {
 
 
 
-exports.updateLogTriggers = (req, res) => {
+/*exports.updateLogTriggers = (req, res) => {
     const snapshot_id = req.params.id;
-    const { triggers } = req.body;
+    const { triggers, notes } = req.body;
     const { isloggedin } = req.session;
 
     const deleteTriggersSQL = `DELETE FROM snapshot_context_trigger WHERE snapshot_id = ${snapshot_id}`;
@@ -357,9 +248,20 @@ exports.updateLogTriggers = (req, res) => {
                     if (err) {
                         throw err;
                     }
-                    // Redirect after successful insertion
-                    req.flash('success', 'Entry succesfully updated');
-                    res.redirect('/dailylog/showall');
+
+                    if (notes && notes.trim().length > 0) {
+                        const updateNotesSQL = `UPDATE snapshot SET notes = '${notes}' WHERE snapshot_id = ${snapshot_id}`;
+                        conn.query(updateNotesSQL, (err, rows) => {
+                            if (err) {
+                                throw err;
+                            }
+                            // Redirect after successful insertion
+                            req.flash('success', 'Entry successfully updated with notes');
+                            res.redirect('/dailylog/showall');
+                        });
+                     // Redirect after successful insertion
+                     req.flash('success', 'Entry successfully updated with notes');
+                     res.redirect('/dailylog/showall');
                 });
             } else {
                 // Redirect even if there are no triggers to insert
@@ -370,6 +272,48 @@ exports.updateLogTriggers = (req, res) => {
     });
 };
 
+*/
+exports.updateLogTriggers = (req, res) => {
+    const snapshot_id = req.params.id;
+    const { triggers, notes } = req.body;
+
+    const deleteTriggersSQL = `DELETE FROM snapshot_context_trigger WHERE snapshot_id = ${snapshot_id}`;
+    conn.query(deleteTriggersSQL, triggers, (err, rows) => {
+        if (err) {
+            throw err;
+        } else {
+            if (triggers && triggers.length > 0) {
+                const insertValues = triggers.map(triggerId => ` (null, '${snapshot_id}', ${triggerId})`).join(',');
+                const insertNewTriggersSQL = `INSERT INTO snapshot_context_trigger (snapshot_context_trigger_id, snapshot_id, trigger_id) VALUES ${insertValues}`;
+                conn.query(insertNewTriggersSQL, (err, rows) => {
+                    if (err) {
+                        throw err;
+                    }
+
+                    if (notes && notes.length > 0) {
+                        const updateNotesSQL = `UPDATE snapshot SET notes = '${notes}' WHERE snapshot_id = ${snapshot_id}`;
+                        conn.query(updateNotesSQL, (err, rows) => {
+                            if (err) {
+                                throw err;
+                            }
+                            // Redirect after successful insertion of notes
+                            req.flash('success', 'Entry successfully updated with notes');
+                            res.redirect('/dailylog/showall');
+                        });
+                    } else {
+                        // Redirect after successful insertion of triggers
+                        req.flash('success', 'Entry successfully updated without notes');
+                        res.redirect('/dailylog/showall');
+                    }
+                });
+            } else {
+                // Redirect even if there are no triggers to insert
+                req.flash('success', 'Triggers successfully removed');
+                res.redirect('/dailylog/showall');
+            }
+        }
+    });
+};
 
 
 
@@ -395,11 +339,7 @@ exports.deleteLog = (req, res) => {
     });
 };
 
-exports.getLogin = (req, res) => {
-    const { isloggedin } = req.session;
-    console.log(isloggedin)
-    res.render('./users/login', { loggedin: isloggedin });
-};
+
 
 exports.getHome = (req, res) => {
 
@@ -409,117 +349,6 @@ exports.getHome = (req, res) => {
     res.render('home', { loggedin: isloggedin, user: userinfo });
 };
 
-exports.getRegister = (req, res) => {
-    const { isloggedin } = req.session
-    res.render('./users/register', { loggedin: isloggedin });
-};
-
-exports.postLogin = (req, res) => {
-    const { isloggedin } = req.session
-    const { username, password } = req.body;
-    const vals = [username, password];
-    console.log(vals);
-
-    const checkuserSQL = `SELECT user_id FROM user WHERE user.user_name = '${username}' 
-                            AND user.password = '${password}'`;
-    
-    conn.query(checkuserSQL, vals, (err, rows) => {
-        if (err) throw err;
-
-        const numrows = rows.length;
-        console.log(numrows);
-
-        if (numrows > 0) {
-            console.log(rows);
-            const session = req.session;
-            session.isloggedin = true;
-            console.log(rows[0]);
-            session.userid = rows[0].user_id;
-            console.log(session);
-            console.log(session.isloggedin);
-            req.flash('success', 'Login successful, welcome back!');
-            res.redirect('/dailylog/showall');
-        } else {
-            req.flash('error', 'incorrect details!')
-            res.redirect('/login');
-        }
-    });
-};
-
-/*exports.postRegister = (req, res) => {
-
-    try {
-        const { username, email, password, firstname, lastname } = req.body;
-        const vals = [username, email, password, firstname, lastname];
-        console.log(vals);
-        const checkUserSQL = `SELECT user.user_name, user.first_name FROM user
-        WHERE email= ${email}'`;
-       
-        conn.query(checkUser,(err,rows)=>{ 
-        if(err) throw err;
-        else{ 
-            if(rows && rows.length>0){
-                req.flash('error',"User Already registered!");
-                res.redirect('register');
-            }
-        const insertUserSQL = 'INSERT INTO `user` (`user_id`, `user_name`, `email`, `password`, `first_name`, `last_name`) VALUES  (NULL, ?, ?, ?, ?,?)';
-        conn.query(insertUserSQL, vals, (err, rows) => {
-            if (err) {
-                throw err;
-            }
-            else {
-                res.redirect('/');
-            }
-        }
-        }); 
-     });
-    } catch (e) {
-        req.flash('error', e.message);
-        res.redirect('register');
-    }
-};
-
-*/
-
-exports.postRegister = (req, res) => {
-    try {
-        const { username, email, password, firstname, lastname } = req.body;
-        const vals = [username, email, password, firstname, lastname];
-        
-        const checkUserSQL = `SELECT user_name, first_name FROM user WHERE email = ?`;
-
-        // Check if the user already exists
-        conn.query(checkUserSQL, email, (err, rows) => {
-            if (err) {
-                throw err;
-            } else {
-                if (rows && rows.length > 0) {
-                    req.flash('error', "User already registered!");
-                    return res.redirect('/register');
-                }
-
-                // If the user does not exist, insert the new user
-                const insertUserSQL = 'INSERT INTO `user` (`user_id`, `user_name`, `email`, `password`, `first_name`, `last_name`) VALUES  (NULL, ?, ?, ?, ?, ?)';
-                conn.query(insertUserSQL, vals, (err, rows) => {
-                    if (err) {
-                        throw err;
-                    } else {
-                        req.flash('success','user succesfully registerd');
-                        res.redirect('/');
-                    }
-                });
-            }
-        });
-    } catch (e) {
-        req.flash('error', e.message);
-        res.redirect('/register');
-    }
-};
 
 
-exports.getLogout = (req, res) => {
-    req.flash('success', "Goodbye!");
-    req.session.destroy(() => {
-        res.redirect('/login');
-    });
-}
+
