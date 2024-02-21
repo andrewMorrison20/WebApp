@@ -1,0 +1,40 @@
+<% layout('layouts/boilerplate')%>
+<link rel="stylesheet" href="/stylesheets/new.css">
+<div class = "container mt-5 container2">
+<h1 class="text-center mb-4">Edit Entry </h1>
+   
+    <% if (currTriggers.length > 0) { %>
+    <fieldset>
+        <legend>Current Triggers:</legend>
+    <ul class="list-group list-group-flush">
+    <% currTriggers.forEach(function(trigger) { %>
+      <li class="list-group-item text-muted"><%= trigger.trigger_name %></li>
+    <% }); %>
+    <% } %>
+    </fieldset>
+</br>
+<form action="/dailylog/edit/<%= snapshot_id %>" method = "post" novalidate class="validated-form">
+<fieldset>
+    <legend>Select triggers: </legend>
+        <% triggers.forEach(function(trigger) { %>
+            <input type="checkbox" class="btn-check" id="<%= trigger.trigger_id %>" name="triggers" value="<%= trigger.trigger_id %>">
+            <label for="<%= trigger.trigger_id %>" class="btn btn-secondary"><%= trigger.trigger_name %></label>
+        <% }); %>
+      
+
+        </fieldset>
+    </br>
+        <fieldset>
+            <legend>Additional Notes: </legend>
+            <input type="textarea" class="form-control" id="notes" name="notes">
+        </fieldset>
+
+
+        </br>
+        <div class="col-md-12  text-right">
+        <a class="card-link btn btn-secondary" href="/dailylog/showall">Back</a> 
+        <button type="submit" class="d-inline btn btn-primary">Update</button>
+    </div>
+
+    </form>
+    </div>

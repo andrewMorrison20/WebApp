@@ -1,0 +1,38 @@
+<% layout('layouts/boilerplate') %>
+    <link rel="stylesheet" href="/stylesheets/new.css">
+    <div class="container mt-5 container2">
+        <h1 class="text-center mb-4">How Are You Feeling?</h1>
+        <form action="/dailylog/new" method="post" novalidate class="validated-form">
+            <fieldset class="slider">
+                <legend>Emotion Levels:</legend>
+                    <% rows.forEach(column => { %>
+                        <% const columnName = column.column_name; %>
+                        <% if (columnName !== 'time_stamp' && columnName !== 'notes' && columnName !== 'user_id' && columnName !== 'snapshot_id') { %>
+                            <label>
+                                <%= columnName %>
+                                <input type="range" name="<%= columnName %>" min="0" max="10" id="<%= columnName %>Slider" />
+                            </label>
+                            <br>
+                        <% } %>
+                    <% }); %>
+            </fieldset>
+        </br>
+            <fieldset>
+                <legend>What triggered these emotions? :</legend>
+                <% triggers.forEach(function(trigger) { %>
+                    <input type="checkbox" class="btn-check" id="<%= trigger.trigger_id %>" name="triggers"
+                        value="<%= trigger.trigger_id %>">
+                    <label for="<%= trigger.trigger_id %>" class="btn btn-secondary">
+                        <%= trigger.trigger_name %>
+                    </label>
+                    <% }); %>
+            </fieldset>
+            <br>
+            <fieldset>
+                <legend>Additional Notes:</legend>
+                <textarea class="form-control" id="notes" name="notes"></textarea>
+            </fieldset>
+            <br>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
