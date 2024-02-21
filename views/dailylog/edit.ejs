@@ -13,7 +13,7 @@
     <% } %>
     </fieldset>
 </br>
-<form action="/edit/<%= snapshot_id %>" method = "post">
+<form action="/edit/<%= snapshot_id %>" method = "post" novalidate class="validated-form">
 <fieldset>
     <legend>Select triggers: </legend>
         <% triggers.forEach(function(trigger) { %>

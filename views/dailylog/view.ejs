@@ -55,7 +55,7 @@
                         </div>
                     </div>
                     <% } else { %>
-                        <div class="uk-display-block uk-card uk-card-body uk-card-default">
+                        <div class="card-body">
                             <% var rawdate=new Date(row.time_stamp); %>
                                 <% var itemdate=new Intl.DateTimeFormat('en-GB', dateformat).format(rawdate); %>
                                     <h3 class="uk-card-title">

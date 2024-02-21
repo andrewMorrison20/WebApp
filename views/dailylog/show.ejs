@@ -11,136 +11,168 @@
             <% } else { %>
                 <h2 class="mt-4 mb-3">Welcome</h2>
                 <% } %>
-        <div class="row">
-            <!-- Left-hand side column for the chart -->
-            <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h3 class="card-title">
-                            Emotion's Over Time
-                        </h3>
-                        <!-- Chart canvas will be dynamically created here -->
-                        <canvas id="emotionChart"></canvas>
-                    </div>
-                    <div class="card-body">
-                        <h3 class="card-title">
-                            Trigger Frequency
-                        </h3>
-                        <!-- Chart canvas will be dynamically created here -->
-                        <canvas id="triggersChart"></canvas>
-                    </div>
+                    <div class="row">
+                        <!-- Left-hand side column for the chart -->
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h3 class="card-title">
+                                        Emotion's Over Time
+                                    </h3>
+                                    <!-- Chart canvas will be dynamically created here -->
+                                    <canvas id="emotionChart"></canvas>
+                                </div>
+                                <div class="card-body">
+                                    <h3 class="card-title">
+                                        Trigger Frequency
+                                    </h3>
+                                    <!-- Chart canvas will be dynamically created here -->
+                                    <canvas id="triggersChart"></canvas>
+                                </div>
 
-                    <div class="card-body">
-                        <h3 class="card-title">
-                            Recent Entries
-                        </h3>
-                        <!-- Chart canvas will be dynamically created here -->
-                        <canvas id="radarChart"></canvas>
-                    </div>
-                </div>
-            </div>
+                                <div class="card-body">
+                                    <h3 class="card-title">
+                                        Recent Entries
+                                    </h3>
+                                    <!-- Chart canvas will be dynamically created here -->
+                                    <canvas id="radarChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
 
-            <!-- Right-hand side column for the logs -->
-            <div class="col-md-6">
-                <div class="container">
-                    <div class="row justify-content-center">
-                        <div class="col-md-12">
-                            <% const dateformat={ weekday: 'long' , year: 'numeric' , month: 'long' , day: 'numeric' ,
-                                hour: 'numeric' , minute: 'numeric' , hour24: true }; %>
-                                <% if (loggedin) { %>
-                                    <h2 class="mt-4 mb-3">
-                                        <%= `${user.name}'s Log` %>
-                                    </h2>
-                                    <% } else { %>
-                                        <h2 class="mt-4 mb-3">My Log</h2>
-                                        <% } %>
+                        <!-- Right-hand side column for the logs -->
+                        <div class="col-md-6">
+                            <div class="container">
+                                <div class="row justify-content-center">
+                                    <div class="col-md-12">
+                                        <% const dateformat={ weekday: 'long' , year: 'numeric' , month: 'long' ,
+                                            day: 'numeric' , hour: 'numeric' , minute: 'numeric' , hour24: true }; %>
+                                            <% if (loggedin) { %>
+                                                <h2 class="mt-4 mb-3">
+                                                    <%= `${user.name}'s Log` %>
+                                                </h2>
+                                                <% } else { %>
+                                                    <h2 class="mt-4 mb-3">My Log</h2>
+                                                    <% } %>
 
-                                            <% log.forEach((row)=> { %>
-                                                <% var snapshotid=row.snapshot_id; %>
-                                                    <% if (loggedin) { %>
-                                                        <div class="card mb-3">
-                                                            <div class="card-body">
-                                                                <% var rawdate=new Date(row.time_stamp); %>
-                                                                    <% var itemdate=new Intl.DateTimeFormat('en-GB',
-                                                                        dateformat).format(rawdate); %>
-                                                                        <h3 class="card-title">
-                                                                            <%= itemdate %>
-                                                                        </h3>
-                                                                        <div class="row justify-content-end">
-                                                                            <div class="col-md-6 text-right">
-                                                                                <a class="btn btn-secondary"
-                                                                                    href="/view/<%= snapshotid %>">View
-                                                                                    Record</a>
+                                                        <% log.forEach((row)=> { %>
+                                                            <% var snapshotid=row.snapshot_id; %>
+                                                                <% if (loggedin) { %>
+                                                                    <div class="card mb-3">
+                                                                        <div class="card-body">
+                                                                            <% var rawdate=new Date(row.time_stamp); %>
+                                                                                <% var itemdate=new
+                                                                                    Intl.DateTimeFormat('en-GB',
+                                                                                    dateformat).format(rawdate); %>
+                                                                                    <h3 class="card-title">
+                                                                                        <%= itemdate %>
+                                                                                    </h3>
+                                                                                    <div
+                                                                                        class="row justify-content-end">
+                                                                                        <div
+                                                                                            class="col-md-6 text-right">
+                                                                                            <a class="btn btn-secondary"
+                                                                                                href="/view/<%= snapshotid %>">View
+                                                                                                Record</a>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <h5>Emotion Summary</h5>
+                                                                                    <ul
+                                                                                        class="list-group list-group-flush">
+                                                                                        <%
+                                                                                            Object.keys(row).forEach((key)=>
+                                                                                            { %>
+                                                                                            <% if (key !=='time_stamp'
+                                                                                                && key !=='snapshot_id'
+                                                                                                && key !=='user_id' &&
+                                                                                                key !=='notes' ) { %>
+                                                                                                <li
+                                                                                                    class="list-group-item">
+                                                                                                    <%= key.charAt(0).toUpperCase()
+                                                                                                        + key.slice(1)
+                                                                                                        %>: <%= row[key]
+                                                                                                            %>
+                                                                                                </li>
+                                                                                                <% } %>
+                                                                                                    <% }); %>
+                                                                                    </ul>
+                                                                                    <div
+                                                                                        class="row justify-content-end mt-3">
+                                                                                        <div
+                                                                                            class="col-md-6 text-right">
+                                                                                            <a class="btn btn-info"
+                                                                                                href="/edit/<%= snapshotid %>">Edit</a>
+                                                                                            <form method="post"
+                                                                                                class="d-inline">
+                                                                                                <button
+                                                                                                    class="btn btn-danger"
+                                                                                                    formaction="/del/<%= snapshotid %>">Delete</button>
+                                                                                            </form>
+                                                                                        </div>
+                                                                                    </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <% } else { %>
+                                                                        <div class="card mb-3">
+                                                                            <div class="card-body">
+                                                                                <% var rawdate=new Date(row.time_stamp);
+                                                                                    %>
+                                                                                    <% var itemdate=new
+                                                                                        Intl.DateTimeFormat('en-GB',
+                                                                                        dateformat).format(rawdate); %>
+                                                                                        <h3 class="card-title">
+                                                                                            <%= itemdate %>
+                                                                                        </h3>
+                                                                                        <p> Log in for more details.
+                                                                                        </p>
                                                                             </div>
                                                                         </div>
-                                                                        <h5>Emotion Summary</h5>
-                                                                        <ul class="list-group list-group-flush">
-                                                                            <% Object.keys(row).forEach((key)=>
-                                                                                { %>
-                                                                                <% if (key !=='time_stamp' && key
-                                                                                    !=='snapshot_id' && key !=='user_id'
-                                                                                    && key !=='notes' ) { %>
-                                                                                    <li class="list-group-item">
-                                                                                        <%= key.charAt(0).toUpperCase()
-                                                                                            + key.slice(1) %>: <%=
-                                                                                                row[key] %>
-                                                                                    </li>
-                                                                                    <% } %>
-                                                                                        <% }); %>
-                                                                        </ul>
-                                                                        <div class="row justify-content-end mt-3">
-                                                                            <div class="col-md-6 text-right">
-                                                                                <a class="btn btn-info"
-                                                                                    href="/edit/<%= snapshotid %>">Edit</a>
-                                                                                <form method="post" class="d-inline">
-                                                                                    <button class="btn btn-danger"
-                                                                                        formaction="/del/<%= snapshotid %>">Delete</button>
-                                                                                </form>
-                                                                            </div>
-                                                                        </div>
-                                                            </div>
-                                                        </div>
-                                                        <% } else { %>
-                                                            <div class="card mb-3">
-                                                                <div class="card-body">
-                                                                    <% var rawdate=new Date(row.time_stamp); %>
-                                                                        <% var itemdate=new Intl.DateTimeFormat('en-GB',
-                                                                            dateformat).format(rawdate); %>
-                                                                            <h3 class="card-title">
-                                                                                <%= itemdate %>
-                                                                            </h3>
-                                                                            <p> Log in for more details.
-                                                                            </p>
-                                                                </div>
-                                                            </div>
-                                                            <% } %>
-                                                                <% }); %>
+                                                                        <% } %>
+                                                                            <% }); %>
 
+                                                                                <%console.log(triggerNames)%>
+                                                                                    <%console.log(dates)%>
+
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
     </div>
     <script>
 
         var yvals = [1, 2, 3, 4, 5, 6, 7, 8];
         var xlabels = [1, 2, 3, 4, 5, 6, 7, 8];
-        const xAxisLabels = `<%= JSON.stringify(dates)%>`;
+        const xLabelsData = `<%- JSON.stringify(dates) %>`;
+        var xlabels = JSON.parse(xLabelsData);
+        const yLabelsData = `<%- JSON.stringify(emotionValues) %>`;
+        var ylabels4 = JSON.parse(yLabelsData);
+        const legendLabels = `<%- JSON.stringify(emotionNames) %>`;
+        var legLabels = JSON.parse(legendLabels);
 
-        console.log(`dates : ${xAxisLabels}`);
- 
+        
+
         const chartdata = {
             labels: xlabels,
-            datasets: [{
-                data: yvals,
-                lineTension: 0,
-                pointRadius: 3,
-                backgroundColor: 'lightgray',
-                bordercColor: 'red',
-                borderWidth: 1
-            }]
+            datasets: ylabels4.map((values, index) => {
+                return {
+                    label: `${ legLabels[index]}`,
+                    data: values,
+                    lineTension: 0,
+                    pointRadius: 3,
+                    
+                    borderWidth: 1,
+                    backgroundColor: `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.2)`,
+                    borderColor: `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255})`,
+                    pointBackgroundColor: `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255})`,
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255})`
+                };
+            })
         };
+    
+        
 
         const chartconfig = {
             type: 'line',
@@ -148,9 +180,9 @@
             options: {
                 animation: true,
                 maintainAspectRatio: true,
-                scales: { y: { min: 0, max: 20 } },
+                scales: { y: { min: -0, max: 11 } },
                 plugins: {
-                    legend: { display: false },
+                    legend: { display: true },
                     tooltips: { enabled: true },
                     tile: {
                         display: true,
@@ -163,10 +195,10 @@
         };
 
 
-        const yAxisData = `<%= JSON.stringify(counts) %>`;
-        const xAxisData = `<%= JSON.stringify(triggerNames)%>`;
+        const yAxisData = `<%- JSON.stringify(counts) %>`;
+        const xAxisData = `<%- JSON.stringify(triggerNames) %>`;
         var yvals2 = JSON.parse(yAxisData);
-        var xlabels2 = ['Family', 'Weather', 'Work', 'Sleep', 'Exercise'];
+        var xlabels2 = JSON.parse(xAxisData);
         maxYAxis = Math.max(...yvals2);
 
 
@@ -186,7 +218,7 @@
                     'rgba(153, 102, 255, 0.2)',
                     'rgba(201, 203, 207, 0.2)'
                 ],
-                borderColor: 'red',
+                borderColor: 'black',
                 borderWidth: 1
             }]
         };
@@ -210,23 +242,17 @@
             }
 
         };
-        const yAxisDataSets = `<%= JSON.stringify(topDataSets) %>`;
+        const yAxisDataSets = `<%- JSON.stringify(topDataSets) %>`;
         var yvals3 = JSON.parse(yAxisDataSets);
+        const xAxislabs = `<%- JSON.stringify(emotionNames) %>`;
+        var xvals3 = JSON.parse(xAxislabs);
 
 
         const data = {
-            labels: [
-                "Enjoyment",
-                "Sadness",
-                "Anger",
-                "Contempt",
-                "Disgust",
-                "Fear",
-                "Surprise"
-            ],
+            labels: xvals3,
             datasets: yvals3.map((values, index) => {
                 return {
-                    label: `My ${index + 1} Dataset`,
+                    label: `Entry ${index + 1}`,
                     data: values,
                     fill: true,
                     backgroundColor: `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.2)`,

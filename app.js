@@ -6,11 +6,12 @@ const express = require('express');
 const morgan = require('morgan');
 const dotenv = require('dotenv').config({ path: './config.env' });
 const session = require('express-session');
+const flash = require('connect-flash');
+const ExpressError = require('./utils/ExpressError');
 const router = require('./routes/mainRoutes');
 const path = require('path');
 const mysql2 = require('mysql2');
 const ejsMate = require('ejs-mate');
-const flash = require('connect-flash');
 const moment = require('moment');
 
 const app = express();
@@ -18,7 +19,7 @@ const app = express();
 app.use(morgan('tiny'));
 app.use(express.static(path.join(__dirname, '/public')));
 app.use(express.urlencoded({ extended: true }));
-app.use(flash());
+
 
 
 app.use(session({
@@ -31,12 +32,30 @@ app.use(session({
           maxAge: 1000 * 60 * 60 * 24 * 7
       }*/
 }));
+
+
+app.use(flash());
+
+app.use((req, res, next) => {
+    console.log(req.session)
+    res.locals.currentUser = req.user;
+    res.locals.success = req.flash('success');
+    res.locals.error = req.flash('error');
+    next();
+});
 app.use('/', router);
 app.set('view engine', 'ejs');
 app.engine('ejs', ejsMate);
 
 app.set('views', path.join(__dirname, 'views'));
 
+app.use((req, res, next) => {
+    console.log(req.session)
+    res.locals.currentUser = req.user;
+    res.locals.success = req.flash('success');
+    res.locals.error = req.flash('error');
+    next();
+})
 
 app.all('*', (req, res, next) => {
     next(new ExpressError('Page Not Found', 404))
