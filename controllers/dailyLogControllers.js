@@ -142,8 +142,8 @@ exports.getEditLog = async (req, res) => {
             return res.redirect('/');
         }
 
-        const checkUserId = `SELECT * FROM snapshot WHERE snapshot_id = ${snapshotid}`;
-        const [userRows, userFields] = await conn.query(checkUserId);
+        const checkUserId = `SELECT * FROM snapshot WHERE snapshot_id = ?`;
+        const [userRows, userFields] = await conn.query(checkUserId, [snapshotid]);
 
         if (userRows[0].length === 0 || userRows[0].user_id !== userid) {
             req.flash('error', 'You are not permitted to edit this snapshot.');
@@ -154,9 +154,9 @@ exports.getEditLog = async (req, res) => {
                            FROM snapshot_context_trigger 
                            LEFT JOIN context_trigger 
                            ON snapshot_context_trigger.trigger_id = context_trigger.trigger_id 
-                           WHERE snapshot_id = ${snapshotid}`;
+                           WHERE snapshot_id = ?`;
 
-        const [rows1, fields1] = await conn.query(selectSQL);
+        const [rows1, fields1] = await conn.query(selectSQL, [snapshotid]);
 
         const selectAllTriggersSQL = 'SELECT * FROM context_trigger';
         const [rows2, fields2] = await conn.query(selectAllTriggersSQL);
@@ -260,7 +260,7 @@ exports.updateLogTriggers = async (req, res) => {
     try {
         const snapshot_id = req.params.id;
         const { triggers, notes } = req.body;
-        
+
         // Delete existing triggers
         const deleteTriggersSQL = `DELETE FROM snapshot_context_trigger WHERE snapshot_id = ?`;
         await conn.query(deleteTriggersSQL, [snapshot_id]);
@@ -285,7 +285,7 @@ exports.updateLogTriggers = async (req, res) => {
 
         res.redirect('/dailylog/showall');
     } catch (error) {
-      
+
         req.flash('error', 'An error occurred while updating log triggers.');
         res.redirect('/dailylog/showall');
     }
