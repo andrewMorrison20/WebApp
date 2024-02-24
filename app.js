@@ -15,6 +15,7 @@ const mysql2 = require('mysql2');
 const ejsMate = require('ejs-mate');
 const moment = require('moment');
 const helmet = require('helmet');
+const bcrypt = require('bcrypt');
 
 const app = express();
 

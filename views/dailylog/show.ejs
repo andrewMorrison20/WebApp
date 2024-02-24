@@ -141,8 +141,6 @@
     </div>
     <script>
 
-        var yvals = [1, 2, 3, 4, 5, 6, 7, 8];
-        var xlabels = [1, 2, 3, 4, 5, 6, 7, 8];
         const xLabelsData = `<%- JSON.stringify(dates) %>`;
         var xlabels = JSON.parse(xLabelsData);
         const yLabelsData = `<%- JSON.stringify(emotionValues) %>`;
@@ -246,13 +244,13 @@
         var yvals3 = JSON.parse(yAxisDataSets);
         const xAxislabs = `<%- JSON.stringify(emotionNames) %>`;
         var xvals3 = JSON.parse(xAxislabs);
-
+        var LegendLabels = xlabels.slice(-5);
 
         const data = {
             labels: xvals3,
             datasets: yvals3.map((values, index) => {
                 return {
-                    label: `Entry ${index + 1}`,
+                    label: `${ LegendLabels[index]}`,
                     data: values,
                     fill: true,
                     backgroundColor: `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.2)`,
