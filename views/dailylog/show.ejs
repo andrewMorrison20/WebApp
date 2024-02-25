@@ -132,6 +132,9 @@
 
                                                                                 <%console.log(triggerNames)%>
                                                                                     <%console.log(dates)%>
+                                                                                    <%console.log(dates.slice(-5))%>
+
+
 
                                     </div>
                                 </div>
@@ -244,13 +247,15 @@
         var yvals3 = JSON.parse(yAxisDataSets);
         const xAxislabs = `<%- JSON.stringify(emotionNames) %>`;
         var xvals3 = JSON.parse(xAxislabs);
-        var LegendLabels = xlabels.slice(-5);
+        var top5Dates = xlabels.slice(-5);
+        top5Dates.reverse();
+        console.log(top5Dates);
 
         const data = {
             labels: xvals3,
             datasets: yvals3.map((values, index) => {
                 return {
-                    label: `${ LegendLabels[index]}`,
+                    label: `${ top5Dates[index]}`,
                     data: values,
                     fill: true,
                     backgroundColor: `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.2)`,
