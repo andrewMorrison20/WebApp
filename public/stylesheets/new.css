@@ -143,3 +143,16 @@ input[type="range"]:focus{
     border-radius: 20px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
+
+  /* Custom CSS for checkbox styling */
+  .btn-check:checked + .btn-secondary {
+	background-color: #ffb70f;
+	border-color:  #ffb70f;
+}
+
+/* Custom CSS to retain original color when not selected */
+.btn-check:not(:checked) + .btn-secondary {
+	color: #ffffff;
+	background-color: #495057;
+	border-color: #495057;
+}
