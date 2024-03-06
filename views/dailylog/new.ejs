@@ -12,7 +12,8 @@
                         <% if (columnName !== 'Time_stamp' && columnName !== 'Notes' && columnName !== 'User_id' && columnName !== 'Snapshot_id') { %>
                             <div class="mb-2">
                                 <label for="<%= columnName %>Slider" class="form-label"><%= columnName %></label>
-                                <input type="range" name="<%= columnName %>" min="0" max="10" id="<%= columnName %>Slider" class="form-range" />
+                                <input type="range" name="<%= columnName %>" min="0" max="10" id="<%= columnName %>Slider" class="form-range" oninput="this.nextElementSibling.value = this.value">
+                                <output>5</output>
                             </div>
                         <% } %>
                     <% }); %>

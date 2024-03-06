@@ -1,0 +1,65 @@
+<% layout('layouts/boilerplate') %>
+
+    <div class="container-fluid">
+        <% if (loggedin) { %>
+            <h2 class="mt-4 mb-3">
+                <%= `${user.firstname}'s Account` %>
+            </h2>
+            <% } else { %>
+                <h2 class="mt-4 mb-3">Log in to see account details</h2>
+                <% } %>
+
+                    <div class="row">
+                        <!-- Left-hand side column for the account details -->
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h3 class="card-title">Account Details</h3>
+                                    <ul>
+                                        <li><b>Username:</b> <%= user.username %>
+                                        </li>
+                                        <li><b>Email Address:</b> <%= user.email %>
+                                        </li>
+                                        <li><b>First Name:</b> <%= user.firstname %>
+                                        </li>
+                                        <li><b>Last Name:</b> <%= user.lastname %>
+                                        </li>
+                                    </ul>
+                                    <div class="row justify-content-end mt-3">
+                                        <div class="col-md-6 text-right">
+                                            <a class="btn btn-info" href="/edit/">Edit
+                                                details</a>
+                                            <form method="post" class="d-inline">
+                                                <button class="btn btn-danger" formaction="/deleteAccount">Delete
+                                                    Account</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right-hand side column for the summary-->
+                        <div class="col-md-6">
+                                    <div class="row justify-content-center">
+                                          <div class="card mb-3"> 
+                                            <div class="card-body">
+                                            <h3 class="card-title">Activity Summary</h3>
+                                            <ul>
+                                                <li><b>Total Entries:</b> <%= numlogs %>
+                                                </li>
+                                                <li><b>First Entry:</b> <%= firstEntry %>
+                                                </li>
+                                                <li><b>Last Entry: </b> <%=lastEntry %>
+                                                </li>
+                                                <li><b>Member Since: </b> <%= signupDate %>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                
+                            </div>
+                        </div>
+
+                    </div>
+    </div>
