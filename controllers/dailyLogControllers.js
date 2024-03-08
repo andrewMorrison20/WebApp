@@ -74,29 +74,26 @@ exports.getAddNewLog = async (req, res) => {
             return res.redirect('/login');
         }
         const config = { validateStatus: (status) => { return status < 500 } }
-        const apiurl = `http://localhost:3002/dailylog/newlog`;
+        //note no config as 404 should not occur extracting schema
+        const schemaapiurl = `http://localhost:3002/dailylog/newlog`;
+        const triggersapiurl = `http://localhost:3002/dailylog/allTriggers`;
 
         // Make a GET request to the API URL using Axios
-        const response = await axios.get(apiurl, config);
-
+        const response1 = await axios.get(schemaapiurl);
+        const response2 = await axios.get(triggersapiurl,config);
         // Extract data from the response
-        const { schemaRows, triggersRows, message } = response.data;
+        const { schemaRows,message} = response1.data;
+        const { triggers} = response2.data;
         console.log(schemaRows);
-        console.log(triggersRows);
-        // Check if the response contains the expected data
-        if (!schemaRows || !triggersRows) {
-            throw new Error('Invalid API response format');
-        }
-
+        console.log(triggers);
         // Render the view with the retrieved data
-        res.render('./dailylog/new', { triggers: triggersRows, rows: schemaRows, loggedin: isloggedin });
+        res.render('./dailylog/new', { triggers: triggers, rows: schemaRows, loggedin: isloggedin });
     } catch (error) {
         console.error('An error occurred while retrieving new log:', error);
         req.flash('error', 'An error occurred while retrieving new log data.');
         res.redirect('/dailylog/showall');
     }
 };
-
 
 exports.getEditLog = async (req, res) => {
     try {
@@ -226,12 +223,14 @@ exports.updateLogTriggers = async (req, res) => {
     try {
         const snapshot_id = req.params.id;
         const { triggers, notes } = req.body;
-
+        
         // Make a request to the endpoint that handles updating log
         const updateLogEndpoint = `http://localhost:3002/dailylog/update/${snapshot_id}`;
-        const config = { validateStatus: (status) => { return status < 500 } }
-        const response = await axios.post(updateLogEndpoint, { triggers, notes }, config);
-
+        const config = { validateStatus: (status) => { return status < 500 } };
+        const deleteapiResponse = await axios.delete(`http://localhost:3002/dailylog/delTriggers/${snapshot_id}`,config);
+        console.log(deleteapiResponse);
+        if(deleteapiResponse.data.status === 'Success'){
+            const response = await axios.post(updateLogEndpoint, { triggers, notes }, config);
         // Check the response from the endpoint
         if (response.data.success) {
             // If the update was successful, redirect to the appropriate page
@@ -240,6 +239,12 @@ exports.updateLogTriggers = async (req, res) => {
         } else {
             // If there was an error, flash an error message and redirect
             req.flash('error', response.data.message);
+            return res.redirect('/dailylog/showall');
+        }
+    }
+        else {
+            // If there was an error, flash an error message and redirect
+            req.flash('error', deleteapiResponse.data.message);
             return res.redirect('/dailylog/showall');
         }
     } catch (error) {
