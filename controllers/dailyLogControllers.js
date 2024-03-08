@@ -133,7 +133,7 @@ exports.getEditLog = async (req, res) => {
         // Retrieve snapshot context triggers by consuming an API
         const currTrigsUrl = `http://localhost:3002/dailylog/snapTriggers/${snapshotid}`;
         const currTrigsResponse = await axios.get(currTrigsUrl, config);
-        const currTriggers = currTrigsResponse.data;
+        const currTriggers = currTrigsResponse.data.triggers;
 
         // Retrieve all triggers by consuming an API
         const allTrigsUrl = 'http://localhost:3002/dailylog/allTriggers';
@@ -174,7 +174,8 @@ exports.selectLog = async (req, res) => {
         // Retrieve snapshot context triggers by consuming an API
         const currTrigsUrl = `http://localhost:3002/dailylog/snapTriggers/${snapshotid}`;
         const currTrigsResponse = await axios.get(currTrigsUrl, config);
-        const currTriggers = currTrigsResponse.data;
+        const currTriggers = currTrigsResponse.data.triggers;
+        console.log(currTriggers);
         res.render('./dailylog/view', { emotions: snapData, triggers: currTriggers, loggedin: isloggedin, snapshotid: snapshotid });
     } catch (error) {
         console.error('An error occurred while retrieving new log:', error);
@@ -254,23 +255,24 @@ exports.deleteLog = async (req, res) => {
         const { isloggedin } = req.session;
         const snapshot_id = req.params.id;
         console.log(snapshot_id);
+        const config = { validateStatus: (status) => { return status < 500 } }
+        const apiResponse = await axios.delete(`http://localhost:3002/dailylog/delTriggers/${snapshot_id}`,config);
 
         // Make HTTP request to the API controller to delete the entry
-        apiResponse = await axios.delete(`http://localhost:3002/del/${snapshot_id}`);
+        const  apiResponse2 = await axios.delete(`http://localhost:3002/dailylog/del/${snapshot_id}`,config);
         // Check if the request was successful
-        if (apiResponse.data.status === 'success') {
+        if (apiResponse2.data.status === 'success') {
             // Redirect to show all logs
             req.flash('success', 'Successfully deleted entry');
             res.redirect('/dailylog/showall');
+    //handle 404 for the snapshot
         } else {
             // Handle the case where the API request was not successful
             req.flash('error', 'An error occurred whilst deleting the  log.');
             res.redirect('/dailylog/new');
         }
-        req.flash('success', 'Entry Deleted');
-        res.redirect('/dailylog/showall');
     } catch (error) {
-        console.error('Error deleting entry:', error.respone.data);
+        console.error('Error deleting entry:', error);
         req.flash('error', 'An error occurred while deleting the entry.');
         res.redirect('/dailylog/showall');
     }

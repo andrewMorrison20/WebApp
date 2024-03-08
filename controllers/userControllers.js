@@ -160,9 +160,11 @@ exports.deleteAccount = async (req, res) => {
     const config = { validateStatus: (status) => status < 500 };
     const apiResponse = await axios.delete(apiUrl, config);
     console.log(apiResponse);
-    if(apiResponse.satus){
-        
-        res.redirect('/logout',{loggedin:isloggedin});
+    const message = apiResponse.data.message;
+
+    if(apiResponse.data.status === 'success'){
+        req.flash('error','Account deleted');
+        res.redirect('/logout');
     }
 }
 catch (error) {
