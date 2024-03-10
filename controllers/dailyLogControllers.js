@@ -19,7 +19,7 @@ exports.getLogs = async (req, res) => {
         console.log(snapshotRows);
 
         if (!snapshotRows || snapshotRows.length === 0) {
-            req.flash('Success', 'Create your first daily snapshot!');
+            req.flash('success', 'Create your first daily snapshot!');
             return res.redirect('/dailylog/new');
         }
 
@@ -80,10 +80,15 @@ exports.getAddNewLog = async (req, res) => {
 
         // Make a GET request to the API URL using Axios
         const response1 = await axios.get(schemaapiurl);
-        const response2 = await axios.get(triggersapiurl,config);
+        const response2 = await axios.get(triggersapiurl, config);
+        console.log(response2.status);
+        if(response2.status === 404){
+            req.flash('error', 'Triggers not found');
+            return res.redirect('/dailylog/showall');
+        }
         // Extract data from the response
-        const { schemaRows,message} = response1.data;
-        const { triggers} = response2.data;
+        const { schemaRows, message } = response1.data;
+        const { triggers } = response2.data;
         console.log(schemaRows);
         console.log(triggers);
         // Render the view with the retrieved data
@@ -121,12 +126,6 @@ exports.getEditLog = async (req, res) => {
             req.flash('error', 'You are not permitted to edit this snapshot.');
             return res.redirect('/dailylog/showall');
         }
-
-        /*  if (snapResponse.data.error) {
-              req.flash('error', userResponse.data.error);
-              return res.redirect('/dailylog/showall');
-          }*/
-
         // Retrieve snapshot context triggers by consuming an API
         const currTrigsUrl = `http://localhost:3002/dailylog/snapTriggers/${snapshotid}`;
         const currTrigsResponse = await axios.get(currTrigsUrl, config);
@@ -172,7 +171,6 @@ exports.selectLog = async (req, res) => {
         const currTrigsUrl = `http://localhost:3002/dailylog/snapTriggers/${snapshotid}`;
         const currTrigsResponse = await axios.get(currTrigsUrl, config);
         const currTriggers = currTrigsResponse.data.triggers;
-        console.log(currTriggers);
         res.render('./dailylog/view', { emotions: snapData, triggers: currTriggers, loggedin: isloggedin, snapshotid: snapshotid });
     } catch (error) {
         console.error('An error occurred while retrieving new log:', error);
@@ -181,29 +179,38 @@ exports.selectLog = async (req, res) => {
 };
 
 
-//done- relook at status
 exports.postNewLog = async (req, res) => {
     try {
         const { isloggedin, userid } = req.session;
         const { notes, triggers, ...emotions } = req.body;
-        const mysqlTimestamp = moment(Date.now()).format('YYYY-MM-DD HH:mm:ss');
+        
         // Prepare data to be sent to the API
         const postData = {
             user_id: userid,
             notes: notes,
             emotions: emotions,
-            triggers: triggers
         };
-        
-        const config = { validateStatus: (status) => { return status < 500 } }
+        console.log(postData);
+        const config = { validateStatus: (status) => { return status < 500 } };
         const apiUrl = 'http://localhost:3002/dailylog/new';
 
         // Make a POST request to the API endpoint to insert new snapshot
         const apiResponse = await axios.post(apiUrl, postData, config);
+
         // Check if the request was successful
         if (apiResponse.data.status === 'success') {
-            // Redirect to show all logs
+            //get the snapshot id for trigger insert
+            const snapshot_id = apiResponse.data.snapshotid;
+            if (triggers && triggers.length > 0) {
+                console.log(triggers);
+                const postData2 = {
+                    triggers: triggers,
+                    snapshot_id: snapshot_id
+                };
+                const apiResponse2 = await axios.post('http://localhost:3002/dailylog/addTriggers', postData2);
+            }
             req.flash('success', triggers && triggers.length > 0 ? 'Successfully added Entry & triggers' : 'Successfully added Entry');
+            // Redirect to show all logs
             res.redirect('/dailylog/showall');
         } else {
             // Handle the case where the API request was not successful
@@ -217,39 +224,55 @@ exports.postNewLog = async (req, res) => {
     }
 };
 
-//works but need messaging etc fixed
-
+ 
 exports.updateLogTriggers = async (req, res) => {
     try {
         const snapshot_id = req.params.id;
         const { triggers, notes } = req.body;
-        
-        // Make a request to the endpoint that handles updating log
+
+        // Define endpoints
         const updateLogEndpoint = `http://localhost:3002/dailylog/update/${snapshot_id}`;
-        const config = { validateStatus: (status) => { return status < 500 } };
-        const deleteapiResponse = await axios.delete(`http://localhost:3002/dailylog/delTriggers/${snapshot_id}`,config);
-        console.log(deleteapiResponse);
-        if(deleteapiResponse.data.status === 'Success'){
-            const response = await axios.post(updateLogEndpoint, { triggers, notes }, config);
-        // Check the response from the endpoint
-        if (response.data.success) {
-            // If the update was successful, redirect to the appropriate page
-            req.flash('success',response.data.message);
-            return res.redirect('/dailylog/showall');
-        } else {
-            // If there was an error, flash an error message and redirect
-            req.flash('error', response.data.message);
-            return res.redirect('/dailylog/showall');
+        const deleteTriggersEndpoint = `http://localhost:3002/dailylog/delTriggers/${snapshot_id}`;
+        const insertTriggersEndpoint = 'http://localhost:3002/dailylog/addTriggers';
+
+        // Define request configuration
+        const config = { validateStatus: (status) => status < 500 };
+
+        // Delete existing triggers
+        const deleteApiResponse = await axios.delete(deleteTriggersEndpoint, config);
+
+        // Add new triggers if provided
+        let insertTriggersResponse;
+        if (triggers && triggers.length > 0) {
+            const postData = {
+                triggers: triggers,
+                snapshot_id: snapshot_id
+            };
+            
+            insertTriggersResponse = await axios.post(insertTriggersEndpoint, postData, config);
         }
-    }
-        else {
-            // If there was an error, flash an error message and redirect
-            req.flash('error', deleteapiResponse.data.message);
-            return res.redirect('/dailylog/showall');
+
+        // Update log notes if provided
+        let updateLogResponse;
+        if (notes && notes.length > 0) {
+            updateLogResponse = await axios.patch(updateLogEndpoint, { notes }, config);
+        }
+
+        // Check for errors
+        if ((insertTriggersResponse && insertTriggersResponse.status === 404) || (updateLogResponse && updateLogResponse.status === 404)) {
+            req.flash('error', 'Invalid Snapshot ID');
+        } else {
+            // Create flash message
+            let message = 'Log updated successfully';
+            if (notes && notes.length > 0) message += ' with new notes';
+            if (triggers && triggers.length > 0) message += `${notes ? ' and' : ''} with new triggers`;
+            req.flash('success', message);
         }
     } catch (error) {
-        console.error('An error occurred while updating log triggers:', error.response.data);
+        console.error('An error occurred while updating log triggers:', error);
         req.flash('error', 'An error occurred while updating log triggers.');
+    } finally {
+        // Redirect to the appropriate page
         res.redirect('/dailylog/showall');
     }
 };
@@ -261,16 +284,16 @@ exports.deleteLog = async (req, res) => {
         const snapshot_id = req.params.id;
         console.log(snapshot_id);
         const config = { validateStatus: (status) => { return status < 500 } }
-        const apiResponse = await axios.delete(`http://localhost:3002/dailylog/delTriggers/${snapshot_id}`,config);
+        const apiResponse = await axios.delete(`http://localhost:3002/dailylog/delTriggers/${snapshot_id}`, config);
 
         // Make HTTP request to the API controller to delete the entry
-        const  apiResponse2 = await axios.delete(`http://localhost:3002/dailylog/del/${snapshot_id}`,config);
+        const apiResponse2 = await axios.delete(`http://localhost:3002/dailylog/del/${snapshot_id}`, config);
         // Check if the request was successful
         if (apiResponse2.data.status === 'success') {
             // Redirect to show all logs
             req.flash('success', 'Successfully deleted entry');
             res.redirect('/dailylog/showall');
-    //handle 404 for the snapshot
+            //handle 404 for the snapshot
         } else {
             // Handle the case where the API request was not successful
             req.flash('error', 'An error occurred whilst deleting the  log.');

@@ -69,7 +69,7 @@ exports.postLogin = async (req, res) => {
 exports.getLogout = (req, res) => {
     const { isloggedin } = req.session;
     if (isloggedin) {
-        req.session.destroy(() => {
+            req.session.destroy(() => {
             res.redirect('/login');
         });
     } else {
@@ -84,14 +84,17 @@ exports.postRegister = async (req, res) => {
 
     try {
         // Insert the new user with hashed password by calling an API
-        const apiUrl = 'http://localhost:3002/register';
-        const response = await axios.post(apiUrl, {
+        const postdata = {
             username: username,
             email: email,
             password: password,
             firstname: firstname,
             lastname: lastname
-        });
+        }
+        const apiUrl = 'http://localhost:3002/register';
+        console.log(postdata);
+        const config = { validateStatus: (status) => status < 500 };
+        const response = await axios.post(apiUrl, postdata,config);
 
         // Handle the response based on status
         if (response.data.status === 'success') {
@@ -163,7 +166,7 @@ exports.deleteAccount = async (req, res) => {
     const message = apiResponse.data.message;
 
     if(apiResponse.data.status === 'success'){
-        req.flash('error','Account deleted');
+        req.flash('success','Account deleted');
         res.redirect('/logout');
     }
 }
