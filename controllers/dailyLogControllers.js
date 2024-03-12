@@ -1,83 +1,50 @@
-const conn = require('./../utils/dbconn');
+
 const moment = require('moment');
-
-
+const axios = require('axios');
 
 exports.getLogs = async (req, res) => {
-
-    const { isloggedin, userid } = req.session;
-
     try {
+        const { isloggedin, userid, username, firstname } = req.session;
+        const userinfo = { name: username, firstname: firstname };
         // Check if the user is logged in
         if (!isloggedin) {
+            req.flash('error', 'You must log in first');
             return res.redirect('/login');
         }
 
-        // Query to retrieve user information
-        const getuserSQL = `SELECT user.user_name, user.first_name FROM user WHERE user.user_id = ?`;
+        // Fetch snapshot data from API
+        const config = { validateStatus: (status) => { return status < 500 } }
+        const snapshotResponse = await axios.get(`http://localhost:3002/dailylog/showall/${userid}`, config);
+        const snapshotRows = snapshotResponse.data.snapshots;
+        console.log(snapshotRows);
 
-        // Execute user query
-        const [userRows, fields] = await conn.query(getuserSQL, userid);
-        if (userRows.length === 0) {
-            throw new Error('User not found');
-        }
-
-        // Populate session variables
-        const username = userRows[0].user_name;
-        const firstname = userRows[0].first_name;
-        req.session.name = username;
-        req.session.firstName = firstname;
-        const userinfo = { name: username, firstname: firstname };
-
-        // Query to retrieve snapshot data
-        const selectSQL = `SELECT * FROM snapshot WHERE snapshot.user_id = ? ORDER BY time_stamp DESC`;
-
-        // Execute snapshot query
-        const [snapshotRows] = await conn.query(selectSQL, userid);
-        if (snapshotRows.length === 0) {
-            req.flash('error', 'Create a daily snapshot first!');
+        if (!snapshotRows || snapshotRows.length === 0) {
+            req.flash('success', 'Create your first daily snapshot!');
             return res.redirect('/dailylog/new');
         }
 
-        //filter keys to only include the emotions
-        const emotions = Object.keys(snapshotRows[0] || {}).filter(key => key !== 'snapshot_id' && key !== 'user_id' && key !== 'time_stamp' && key !== 'notes');
+        // Extract emotion names and values
+        const emotions = Object.keys(snapshotRows[0] || {})
+            .filter(key => !['snapshot_id', 'user_id', 'time_stamp', 'notes'].includes(key));
 
         // Select the top 5 snapshots
         const top5Snaps = snapshotRows.slice(0, 5);
-        const emotionDataSets = [];
+        const emotionDataSets = top5Snaps.map(snap => emotions.map(emotion => snap[emotion]));
 
-        // Extract emotion values from top 5 snapshots
-        top5Snaps.forEach(snap => {
-            const emotionArray = Object.keys(snap)
-                .filter(key => !['user_id', 'snapshot_id', 'notes', 'time_stamp'].includes(key))
-                .map(key => snap[key]);
-            emotionDataSets.push(emotionArray);
-        });
-
-        // Extract date labels
         const revrows = [...snapshotRows];
         revrows.reverse();
         const dateLabels = revrows.map(row => {
             const date = new Date(row.time_stamp);
             return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
         });
-
         const emotionArrays = emotions.map(emotion => revrows.map(row => row[emotion]));
-
-        // Query to retrieve count of triggers
-        const selectCountSQL = `SELECT COUNT(*), trigger_name FROM snapshot 
-            INNER JOIN snapshot_context_trigger ON snapshot.snapshot_id = snapshot_context_trigger.snapshot_id 
-            INNER JOIN context_trigger ON snapshot_context_trigger.trigger_id = context_trigger.trigger_id 
-            WHERE user_id = ?
-            GROUP BY context_trigger.trigger_id;`;
-
-        // Execute count query
-        const [countRows] = await conn.query(selectCountSQL, userid);
-
+        // Fetch trigger counts from API
+        const countResponse = await axios.get(`http://localhost:3002/dailylog/triggerCounts/${userid}`, config);
+        const countRows = countResponse.data.triggerCounts;
+        console.log(countRows);
         // Extract counts and trigger names
         const counts = countRows.map(item => item['COUNT(*)']);
         const triggerNames = countRows.map(item => item.trigger_name);
-
         // Render the view with data
         res.render('./dailylog/show', {
             log: snapshotRows,
@@ -85,10 +52,10 @@ exports.getLogs = async (req, res) => {
             topDataSets: emotionDataSets,
             triggerNames: triggerNames,
             emotionNames: emotions,
-            emotionValues: emotionArrays,
             loggedin: isloggedin,
             user: userinfo,
-            dates: dateLabels
+            dates: dateLabels,
+            emotionValues: emotionArrays
         });
     } catch (error) {
         console.error('An error occurred while retrieving logs:', error);
@@ -96,8 +63,6 @@ exports.getLogs = async (req, res) => {
         res.redirect('/login');
     }
 };
-
-
 
 exports.getAddNewLog = async (req, res) => {
     try {
@@ -108,145 +73,150 @@ exports.getAddNewLog = async (req, res) => {
             req.flash('error', 'You must log in first');
             return res.redirect('/login');
         }
+        const config = { validateStatus: (status) => { return status < 500 } }
+        //note no config as 404 should not occur extracting schema
+        const schemaapiurl = `http://localhost:3002/dailylog/newlog`;
+        const triggersapiurl = `http://localhost:3002/dailylog/allTriggers`;
 
-        const selectSchemaSQL = `SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS
-                                    WHERE table_schema = 'moodify' AND table_name = 'snapshot'`;
-
-        const [schemaRows, schemaFields] = await conn.query(selectSchemaSQL);
-
-        const selectTriggersSQL = 'SELECT * FROM context_trigger';
-        const [triggersRows, triggersFields] = await conn.query(selectTriggersSQL);
-
+        // Make a GET request to the API URL using Axios
+        const response1 = await axios.get(schemaapiurl);
+        const response2 = await axios.get(triggersapiurl, config);
+        console.log(response2.status);
+        if(response2.status === 404){
+            req.flash('error', 'Triggers not found');
+            return res.redirect('/dailylog/showall');
+        }
+        // Extract data from the response
+        const { schemaRows, message } = response1.data;
+        const { triggers } = response2.data;
         console.log(schemaRows);
-
-        res.render('./dailylog/new', { triggers: triggersRows, rows: schemaRows, loggedin: isloggedin });
+        console.log(triggers);
+        // Render the view with the retrieved data
+        res.render('./dailylog/new', { triggers: triggers, rows: schemaRows, loggedin: isloggedin });
     } catch (error) {
         console.error('An error occurred while retrieving new log:', error);
-        res.redirect('/');
+        req.flash('error', 'An error occurred while retrieving new log data.');
+        res.redirect('/dailylog/showall');
     }
 };
-
-
-
 
 exports.getEditLog = async (req, res) => {
     try {
         const snapshotid = req.params.id;
         const { isloggedin, userid } = req.session;
-        console.log(`User logged in: ${isloggedin}`);
-        console.log(`Snapshot ID: ${snapshotid}`);
-        console.log(`User ID: ${userid}`);
-
         if (!isloggedin) {
             req.flash('error', 'Must be logged in to edit entries');
-            return res.redirect('/');
-        }
-
-        const checkUserId = `SELECT * FROM snapshot WHERE snapshot_id = ?`;
-        const [userRows, userFields] = await conn.query(checkUserId, [snapshotid]);
-
-        if (userRows[0].length === 0 || userRows[0].user_id !== userid) {
-            req.flash('error', 'You are not permitted to edit this snapshot.');
             return res.redirect('/login');
         }
+        const config = { validateStatus: (status) => { return status < 500 } }
+        // Check user permission by consuming an API
+        const snapApiUrl = `http://localhost:3002/dailylog/snap/${snapshotid}`;
+        const snapResponse = await axios.get(snapApiUrl, config);
+        console.log(snapResponse);
+        if (snapResponse.status === 404) {
+            req.flash('error', 'Invalid Snapshot ID');
+            return res.redirect('/dailylog/showall')
+        }
+        const snapData = snapResponse.data.snapshotData;
+        console.log(snapResponse.data.snapshotData);
+        const authorId = snapResponse.data.snapshotData[0].user_id;
+        console.log(`authorId : ${authorId}`)
 
-        const selectSQL = `SELECT context_trigger.trigger_id, trigger_name 
-                           FROM snapshot_context_trigger 
-                           LEFT JOIN context_trigger 
-                           ON snapshot_context_trigger.trigger_id = context_trigger.trigger_id 
-                           WHERE snapshot_id = ?`;
+        if (authorId !== userid) {
+            req.flash('error', 'You are not permitted to edit this snapshot.');
+            return res.redirect('/dailylog/showall');
+        }
+        // Retrieve snapshot context triggers by consuming an API
+        const currTrigsUrl = `http://localhost:3002/dailylog/snapTriggers/${snapshotid}`;
+        const currTrigsResponse = await axios.get(currTrigsUrl, config);
+        const currTriggers = currTrigsResponse.data.triggers;
 
-        const [rows1, fields1] = await conn.query(selectSQL, [snapshotid]);
+        // Retrieve all triggers by consuming an API
+        const allTrigsUrl = 'http://localhost:3002/dailylog/allTriggers';
+        const allTrigsResponse = await axios.get(allTrigsUrl, config);
 
-        const selectAllTriggersSQL = 'SELECT * FROM context_trigger';
-        const [rows2, fields2] = await conn.query(selectAllTriggersSQL);
+        const triggers = allTrigsResponse.data.triggers;
 
-        console.log(rows2);
-
-        res.render('./dailylog/edit', { currTriggers: rows1, triggers: rows2, loggedin: isloggedin, snapshot_id: snapshotid });
+        res.render('./dailylog/edit', { currTriggers: currTriggers, triggers: triggers, loggedin: isloggedin, snapshot_id: snapshotid });
     } catch (error) {
-        console.error('An error occurred while retrieving new log:', error);
-        res.redirect('/');
+        console.error('An error occurred while retrieving log:', error);
+        res.redirect('/dailylog/showall');
     }
 };
-
-
 
 exports.selectLog = async (req, res) => {
     try {
-        const { isloggedin, userid } = req.session;
-        console.log(`User logged in: ${isloggedin}`);
-
-        if (!isloggedin) {
-            return res.redirect('/');
-        }
-
         const snapshotid = req.params.id;
-        const selectSnapSQL = `SELECT * FROM snapshot WHERE snapshot_id = ?`;
-        const [rows, fields1] = await conn.query(selectSnapSQL, [snapshotid]);
-
-        if (rows.length === 0 || rows[0].user_id !== userid) {
-            req.flash('error', 'You are not permitted to view this snapshot.');
+        const { isloggedin, userid } = req.session;
+        if (!isloggedin) {
+            req.flash('error', 'Must be logged in to view entries');
             return res.redirect('/login');
         }
-
-        const selectTriggersSQL = `SELECT context_trigger.trigger_id, trigger_name 
-            FROM snapshot_context_trigger 
-            LEFT JOIN context_trigger ON snapshot_context_trigger.trigger_id = context_trigger.trigger_id 
-            WHERE snapshot_id = ?`
-        const [triggers, fields2] = await conn.query(selectTriggersSQL, [snapshotid]);
-
-        console.log(triggers);
-
-        res.render('./dailylog/view', { emotions: rows, triggers: triggers, loggedin: isloggedin, snapshotid: snapshotid });
+        const config = { validateStatus: (status) => { return status < 500 } }
+        // Check user permission by consuming an API
+        const snapApiUrl = `http://localhost:3002/dailylog/snap/${snapshotid}`;
+        const snapResponse = await axios.get(snapApiUrl, config);
+        console.log(snapResponse);
+        if (snapResponse.status === 404) {
+            req.flash('error', 'Invalid Snapshot ID');
+            return res.redirect('/dailylog/showall')
+        }
+        const snapData = snapResponse.data.snapshotData;
+        const authorId = snapResponse.data.snapshotData[0].user_id;
+        if (authorId !== userid) {
+            req.flash('error', 'You are not permitted to view this snapshot.');
+            return res.redirect('/dailylog/showall');
+        }
+        // Retrieve snapshot context triggers by consuming an API
+        const currTrigsUrl = `http://localhost:3002/dailylog/snapTriggers/${snapshotid}`;
+        const currTrigsResponse = await axios.get(currTrigsUrl, config);
+        const currTriggers = currTrigsResponse.data.triggers;
+        res.render('./dailylog/view', { emotions: snapData, triggers: currTriggers, loggedin: isloggedin, snapshotid: snapshotid });
     } catch (error) {
-        console.error('An error occurred while selecting log:', error);
-        req.flash('error', 'An error occurred while retrieving the log.');
-        res.redirect('/');
+        console.error('An error occurred while retrieving new log:', error);
+        res.redirect('/dailylog/showall');
     }
 };
-
 
 
 exports.postNewLog = async (req, res) => {
     try {
         const { isloggedin, userid } = req.session;
-        console.log(`User logged in: ${isloggedin}`);
-        console.log(req.body);
-        console.log(userid);
         const { notes, triggers, ...emotions } = req.body;
-        console.log(`emotions are currently : ${emotions}`);
-        const mysqlTimestamp = moment(Date.now()).format('YYYY-MM-DD HH:mm:ss');
+        
+        // Prepare data to be sent to the API
+        const postData = {
+            user_id: userid,
+            notes: notes,
+            emotions: emotions,
+        };
+        console.log(postData);
+        const config = { validateStatus: (status) => { return status < 500 } };
+        const apiUrl = 'http://localhost:3002/dailylog/new';
 
-        // Extract emotion keys and values
-        const emotionKeys = Object.keys(emotions);
-        const emotionValues = emotionKeys.map(key => emotions[key]);
-        console.log(emotionKeys);
-        console.log(emotionValues);
-        // Prepare SQL query placeholders and values
-        const placeholders = Array(emotionKeys.length).fill('?').join(',');
+        // Make a POST request to the API endpoint to insert new snapshot
+        const apiResponse = await axios.post(apiUrl, postData, config);
 
-        const insertSQL = `INSERT INTO snapshot (snapshot_id,user_id,${emotionKeys.join(',')},time_stamp,notes) VALUES (NULL,${userid},${placeholders},?,?)`;
-
-        const insertValues = [...emotionValues, mysqlTimestamp, notes];
-        console.log(insertValues);
-        console.log(insertSQL);
-
-        // Insert new snapshot
-        const [insertRows, fields] = await conn.query(insertSQL, insertValues);
-        const snapshotId = insertRows.insertId;
-        console.log(snapshotId);
-
-        // Insert triggers if any
-        if (triggers && triggers.length > 0) {
-            const insertTriggersSQL = `INSERT INTO snapshot_context_trigger (snapshot_context_trigger_id,snapshot_id,trigger_id) VALUES ?`;
-            const triggerValues = triggers.map(triggerId => [null, snapshotId, triggerId]);
-            await conn.query(insertTriggersSQL, [triggerValues]);
+        // Check if the request was successful
+        if (apiResponse.data.status === 'success') {
+            //get the snapshot id for trigger insert
+            const snapshot_id = apiResponse.data.snapshotid;
+            if (triggers && triggers.length > 0) {
+                console.log(triggers);
+                const postData2 = {
+                    triggers: triggers,
+                    snapshot_id: snapshot_id
+                };
+                const apiResponse2 = await axios.post('http://localhost:3002/dailylog/addTriggers', postData2);
+            }
+            req.flash('success', triggers && triggers.length > 0 ? 'Successfully added Entry & triggers' : 'Successfully added Entry');
+            // Redirect to show all logs
+            res.redirect('/dailylog/showall');
+        } else {
+            // Handle the case where the API request was not successful
+            req.flash('error', 'An error occurred while adding new log.');
+            res.redirect('/dailylog/new');
         }
-
-        // Redirect to show all logs
-        req.flash('success', triggers && triggers.length > 0 ? 'Successfully added Entry & triggers' : 'Successfully added Entry');
-        res.redirect('/dailylog/showall');
     } catch (error) {
         console.error('An error occurred while adding new log:', error);
         req.flash('error', 'An error occurred while adding new log.');
@@ -254,64 +224,88 @@ exports.postNewLog = async (req, res) => {
     }
 };
 
-
-
+ 
 exports.updateLogTriggers = async (req, res) => {
     try {
         const snapshot_id = req.params.id;
         const { triggers, notes } = req.body;
 
+        // Define endpoints
+        const updateLogEndpoint = `http://localhost:3002/dailylog/update/${snapshot_id}`;
+        const deleteTriggersEndpoint = `http://localhost:3002/dailylog/delTriggers/${snapshot_id}`;
+        const insertTriggersEndpoint = 'http://localhost:3002/dailylog/addTriggers';
+
+        // Define request configuration
+        const config = { validateStatus: (status) => status < 500 };
+
         // Delete existing triggers
-        const deleteTriggersSQL = `DELETE FROM snapshot_context_trigger WHERE snapshot_id = ?`;
-        await conn.query(deleteTriggersSQL, [snapshot_id]);
+        const deleteApiResponse = await axios.delete(deleteTriggersEndpoint, config);
 
-        // Insert new triggers if any (force triggers to be an array to cover single trigger for map func )
+        // Add new triggers if provided
+        let insertTriggersResponse;
         if (triggers && triggers.length > 0) {
-            const insertValues = [...triggers].map(triggerId => [null, snapshot_id, triggerId]);
-            const insertNewTriggersSQL = `INSERT INTO snapshot_context_trigger (snapshot_context_trigger_id, snapshot_id, trigger_id) VALUES ?`;
-            await conn.query(insertNewTriggersSQL, [insertValues]);
-        } else {
-            req.flash('success', 'Previous triggers successfully deleted');
+            const postData = {
+                triggers: triggers,
+                snapshot_id: snapshot_id
+            };
+            
+            insertTriggersResponse = await axios.post(insertTriggersEndpoint, postData, config);
         }
 
-        // Update notes if provided
+        // Update log notes if provided
+        let updateLogResponse;
         if (notes && notes.length > 0) {
-            const updateNotesSQL = `UPDATE snapshot SET notes = ? WHERE snapshot_id = ?`;
-            await conn.query(updateNotesSQL, [notes, snapshot_id]);
-            req.flash('success', 'Entry successfully updated with notes');
-        } else {
-            req.flash('success', 'Entry successfully updated');
+            updateLogResponse = await axios.patch(updateLogEndpoint, { notes }, config);
         }
 
-        res.redirect('/dailylog/showall');
+        // Check for errors
+        if ((insertTriggersResponse && insertTriggersResponse.status === 404) || (updateLogResponse && updateLogResponse.status === 404)) {
+            req.flash('error', 'Invalid Snapshot ID');
+        } else {
+            // Create flash message
+            let message = 'Log updated successfully';
+            if (notes && notes.length > 0) message += ' with new notes';
+            if (triggers && triggers.length > 0) message += `${notes ? ' and' : ''} with new triggers`;
+            req.flash('success', message);
+        }
     } catch (error) {
-
+        console.error('An error occurred while updating log triggers:', error);
         req.flash('error', 'An error occurred while updating log triggers.');
+    } finally {
+        // Redirect to the appropriate page
         res.redirect('/dailylog/showall');
     }
 };
 
-
+//done?
 exports.deleteLog = async (req, res) => {
     try {
         const { isloggedin } = req.session;
         const snapshot_id = req.params.id;
         console.log(snapshot_id);
+        const config = { validateStatus: (status) => { return status < 500 } }
+        const apiResponse = await axios.delete(`http://localhost:3002/dailylog/delTriggers/${snapshot_id}`, config);
 
-        const deleteSQL1 = `DELETE FROM snapshot_context_trigger WHERE snapshot_id = ?`;
-        await conn.query(deleteSQL1, [snapshot_id]);
-
-        const deleteSQL2 = `DELETE FROM snapshot WHERE snapshot_id = ?`;
-        await conn.query(deleteSQL2, [snapshot_id]);
-
-        req.flash('success', 'Entry Deleted');
-        res.redirect('/dailylog/showall');
+        // Make HTTP request to the API controller to delete the entry
+        const apiResponse2 = await axios.delete(`http://localhost:3002/dailylog/del/${snapshot_id}`, config);
+        // Check if the request was successful
+        if (apiResponse2.data.status === 'success') {
+            // Redirect to show all logs
+            req.flash('success', 'Successfully deleted entry');
+            res.redirect('/dailylog/showall');
+            //handle 404 for the snapshot
+        } else {
+            // Handle the case where the API request was not successful
+            req.flash('error', 'An error occurred whilst deleting the  log.');
+            res.redirect('/dailylog/new');
+        }
     } catch (error) {
         console.error('Error deleting entry:', error);
         req.flash('error', 'An error occurred while deleting the entry.');
         res.redirect('/dailylog/showall');
     }
 };
+
 
 exports.getHome = (req, res) => {
 

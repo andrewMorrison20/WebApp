@@ -12,6 +12,7 @@ const userRouter = require('./routes/userRoutes');
 const dailylogRouter = require('./routes/dailylogRoutes');
 const path = require('path');
 const mysql2 = require('mysql2');
+const axios = require('axios');
 const ejsMate = require('ejs-mate');
 const moment = require('moment');
 const helmet = require('helmet');
