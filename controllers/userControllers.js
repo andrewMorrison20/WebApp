@@ -2,15 +2,18 @@
 const moment = require('moment');
 const bcrypt = require('bcrypt');
 const axios = require('axios');
+const { validationResult } = require('express-validator');
 
 exports.getLogin = (req, res) => {
+
     const { isloggedin } = req.session;
     if (isloggedin) {
         req.flash('error', 'Already logged in');
         return res.redirect('/dailylog/showall');
     }
-    console.log(isloggedin)
-    res.render('./users/login', { loggedin: isloggedin });
+    console.log(isloggedin);
+
+    res.render('./users/login', {loggedin: isloggedin });
 };
 
 exports.getHome = (req, res) => {
@@ -23,6 +26,7 @@ exports.getHome = (req, res) => {
 
 exports.getRegister = (req, res) => {
     const { isloggedin } = req.session
+
     if (isloggedin) {
         req.flash('error', 'Already logged in');
         return res.redirect('/dailylog/showall');
@@ -33,9 +37,18 @@ exports.getRegister = (req, res) => {
 
 //done
 exports.postLogin = async (req, res) => {
-    const { username, password } = req.body;
-    console.log(username);
     try {
+        const { username, password } = req.body;
+        const errors = validationResult(req);
+        const errorArray = errors.array();
+        console.log(errorArray);
+
+        if (!errors.isEmpty()) {
+                const { isloggedin } = req.session;
+                req.flash('error', errorArray[0].msg);
+                    return res.status(422).render('./users/login', { loggedin: isloggedin})
+                }
+        
         // Consume the API to retrieve user password
         const passwordResponse = await axios.get(`http://localhost:3002/userDetails/${username}`);
         const userDetails = passwordResponse.data.result;
@@ -69,7 +82,7 @@ exports.postLogin = async (req, res) => {
 exports.getLogout = (req, res) => {
     const { isloggedin } = req.session;
     if (isloggedin) {
-            req.session.destroy(() => {
+        req.session.destroy(() => {
             res.redirect('/login');
         });
     } else {
@@ -80,9 +93,17 @@ exports.getLogout = (req, res) => {
 
 //done- needs status fixed
 exports.postRegister = async (req, res) => {
-    const { username, email, password, firstname, lastname } = req.body;
 
     try {
+        const { username, email, password, firstname, lastname } = req.body;
+        const errors = validationResult(req);
+    
+        if (!errors.isEmpty()) {
+            const isloggedin = false;
+            const message = errors.array()[0].msg
+            req.flash('error',  message )
+            return res.status(422).render('./users/register',{loggedin:isloggedin})
+        }
         // Insert the new user with hashed password by calling an API
         const postdata = {
             username: username,
@@ -94,7 +115,7 @@ exports.postRegister = async (req, res) => {
         const apiUrl = 'http://localhost:3002/register';
         console.log(postdata);
         const config = { validateStatus: (status) => status < 500 };
-        const response = await axios.post(apiUrl, postdata,config);
+        const response = await axios.post(apiUrl, postdata, config);
 
         // Handle the response based on status
         if (response.data.status === 'success') {
@@ -154,25 +175,25 @@ exports.getMyAccount = async (req, res) => {
 
 exports.deleteAccount = async (req, res) => {
     try {
-        const { isloggedin, userid} = req.session;
-    if(!isloggedin){
-        req.flash('error', 'Please log in');
-        return res.redirect('/login');
-    }
-    apiUrl =  `http://localhost:3002/deleteAccount/${userid}`;
-    const config = { validateStatus: (status) => status < 500 };
-    const apiResponse = await axios.delete(apiUrl, config);
-    console.log(apiResponse);
-    const message = apiResponse.data.message;
+        const { isloggedin, userid } = req.session;
+        if (!isloggedin) {
+            req.flash('error', 'Please log in');
+            return res.redirect('/login');
+        }
+        apiUrl = `http://localhost:3002/deleteAccount/${userid}`;
+        const config = { validateStatus: (status) => status < 500 };
+        const apiResponse = await axios.delete(apiUrl, config);
+        console.log(apiResponse);
+        const message = apiResponse.data.message;
 
-    if(apiResponse.data.status === 'success'){
-        req.flash('success','Account deleted');
-        res.redirect('/logout');
+        if (apiResponse.data.status === 'success') {
+            req.flash('success', 'Account deleted');
+            res.redirect('/logout');
+        }
     }
-}
-catch (error) {
-    console.error('An error occurred during Account deletion:', error);
-    req.flash('error', 'An error occurred during account deletion.');
-    res.redirect('/account');
-}
+    catch (error) {
+        console.error('An error occurred during Account deletion:', error);
+        req.flash('error', 'An error occurred during account deletion.');
+        res.redirect('/account');
+    }
 }

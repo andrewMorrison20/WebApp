@@ -1,6 +1,4 @@
-//if (process.env.NODE_ENV !== "production") {
-//  require('dotenv').config();
-//}
+
 
 const express = require('express');
 const morgan = require('morgan');
@@ -30,11 +28,6 @@ app.use(session({
     secret: 'thisshouldbeabettersecret!',
     resave: false,
     saveUninitialized: false,
-    /*  cookie: {
-          httpOnly: true,
-          expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
-          maxAge: 1000 * 60 * 60 * 24 * 7
-      }*/
 }));
 
 
